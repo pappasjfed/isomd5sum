@@ -79,7 +79,9 @@ static inline int getpagesize(void) {
 }
 
 /* aligned_alloc implementation for Windows */
-#if !defined(__MINGW32__) && defined(_MSC_VER) && _MSC_VER < 1900
+/* MSVC doesn't provide aligned_alloc even in newer versions, so we need to use _aligned_malloc */
+#if defined(_MSC_VER)
+#include <malloc.h>
 static inline void* aligned_alloc(size_t alignment, size_t size) {
     return _aligned_malloc(size, alignment);
 }
