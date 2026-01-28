@@ -23,11 +23,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#ifdef _WIN32
+#include "win32_compat.h"
+#else
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <string.h>
+#endif
 
 #include "md5.h"
 #include "libcheckisomd5.h"

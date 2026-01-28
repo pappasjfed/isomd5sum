@@ -19,8 +19,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32
+#include "win32_compat.h"
+#else
 #include <sys/types.h>
 #include <unistd.h>
+#endif
 
 #include "md5.h"
 

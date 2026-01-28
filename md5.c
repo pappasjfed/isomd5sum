@@ -20,7 +20,18 @@
  */
 
 #include <string.h>
+
+#ifdef _WIN32
+/* Windows doesn't have endian.h, define endianness macros */
+#include <stdlib.h>
+#define __LITTLE_ENDIAN 1234
+#define __BIG_ENDIAN 4321
+/* Windows is typically little-endian */
+#define __BYTE_ORDER __LITTLE_ENDIAN
+#else
 #include <endian.h>
+#endif
+
 #include "md5.h"
 
 void MD5_Transform(uint32 *buf, uint32 const *in);

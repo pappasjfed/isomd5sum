@@ -2,9 +2,13 @@
 #ifndef MD5_H
 #define MD5_H
 
+#ifdef _WIN32
+#include <stdint.h>
+typedef uint32_t uint32;
+#else
 #include <sys/types.h>
-
 typedef u_int32_t uint32;
+#endif
 
 struct MD5Context {
 	uint32 buf[4];
