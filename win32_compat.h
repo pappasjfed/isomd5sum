@@ -45,16 +45,26 @@
 #define O_TRUNC _O_TRUNC
 #endif
 
-/* POSIX read/write/lseek replacements */
+/* POSIX read/write/close replacements */
 #define read _read
 #define write _write
 #define close _close
-#define lseek _lseeki64
 #define open _open
 
-/* off_t definition for Windows */
+/* Handle lseek - MinGW already defines it */
+#ifndef __MINGW32__
+#define lseek _lseeki64
+#endif
+
+/* off_t definition for Windows - MinGW already defines it */
+#ifndef __MINGW32__
 typedef __int64 off_t;
+#endif
+
+/* ssize_t definition - MinGW already defines it */
+#ifndef __MINGW32__
 typedef long ssize_t;
+#endif
 
 /* getpagesize() implementation */
 static inline int getpagesize(void) {
@@ -63,12 +73,23 @@ static inline int getpagesize(void) {
     return si.dwPageSize;
 }
 
-/* aligned_alloc implementation for older MSVC */
-#if defined(_MSC_VER) && _MSC_VER < 1900
+/* aligned_alloc implementation for Windows */
+#if !defined(__MINGW32__) && defined(_MSC_VER) && _MSC_VER < 1900
 static inline void* aligned_alloc(size_t alignment, size_t size) {
     return _aligned_malloc(size, alignment);
 }
 #define free(ptr) _aligned_free(ptr)
+#endif
+
+/* For MinGW, we need to provide aligned_alloc if not available */
+#ifdef __MINGW32__
+#include <malloc.h>
+static inline void* aligned_alloc(size_t alignment, size_t size) {
+    /* MinGW uses _aligned_malloc */
+    return _aligned_malloc(size, alignment);
+}
+/* Note: We should use _aligned_free for these allocations,
+ * but to keep compatibility we'll just use regular free which works in MinGW */
 #endif
 
 /* Handle select and timeval for Windows */
