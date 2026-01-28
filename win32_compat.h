@@ -56,19 +56,22 @@
 #define lseek _lseeki64
 #endif
 
-/* off_t definition for Windows - MinGW already defines it */
-#ifndef __MINGW32__
+/* off_t definition for Windows - only if not already defined */
+/* Newer Windows SDK (UCRT) provides off_t, older versions don't */
+#if !defined(__MINGW32__) && !defined(_OFF_T_DEFINED)
 typedef __int64 off_t;
+#define _OFF_T_DEFINED
 #endif
 
-/* ssize_t definition - MinGW already defines it */
+/* ssize_t definition - only if not already defined */
 /* Use intptr_t for correct size on 64-bit systems */
-#ifndef __MINGW32__
+#if !defined(__MINGW32__) && !defined(_SSIZE_T_DEFINED)
 #ifdef _WIN64
 typedef __int64 ssize_t;
 #else
 typedef long ssize_t;
 #endif
+#define _SSIZE_T_DEFINED
 #endif
 
 /* getpagesize() implementation */
