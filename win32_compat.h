@@ -62,8 +62,13 @@ typedef __int64 off_t;
 #endif
 
 /* ssize_t definition - MinGW already defines it */
+/* Use intptr_t for correct size on 64-bit systems */
 #ifndef __MINGW32__
+#ifdef _WIN64
+typedef __int64 ssize_t;
+#else
 typedef long ssize_t;
+#endif
 #endif
 
 /* getpagesize() implementation */
@@ -78,7 +83,7 @@ static inline int getpagesize(void) {
 static inline void* aligned_alloc(size_t alignment, size_t size) {
     return _aligned_malloc(size, alignment);
 }
-#define free(ptr) _aligned_free(ptr)
+#define NEED_ALIGNED_FREE 1
 #endif
 
 /* For MinGW, we need to provide aligned_alloc if not available */
@@ -88,14 +93,25 @@ static inline void* aligned_alloc(size_t alignment, size_t size) {
     /* MinGW uses _aligned_malloc */
     return _aligned_malloc(size, alignment);
 }
-/* Note: We should use _aligned_free for these allocations,
- * but to keep compatibility we'll just use regular free which works in MinGW */
+#define NEED_ALIGNED_FREE 1
+#endif
+
+/* Provide aligned_free wrapper for Windows */
+#ifdef NEED_ALIGNED_FREE
+static inline void aligned_free(void* ptr) {
+    if (ptr) _aligned_free(ptr);
+}
+#else
+/* On non-Windows, aligned_alloc uses regular malloc, so use regular free */
+#define aligned_free(ptr) free(ptr)
 #endif
 
 /* Handle select and timeval for Windows */
 #ifndef _WINSOCKAPI_
 #include <winsock2.h>
+#ifdef _MSC_VER
 #pragma comment(lib, "ws2_32.lib")
+#endif
 #endif
 
 /* Macro to check if running on Windows */

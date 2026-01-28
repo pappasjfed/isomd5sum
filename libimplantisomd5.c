@@ -131,7 +131,7 @@ int implantISOFD(int isofd, int supported, int forceit, int quiet, char **errstr
 
         offset += nread;
     }
-    free(buffer);
+    aligned_free(buffer);
 
     char hashsum[HASH_SIZE + 1];
     md5sum(hashsum, &hashctx);

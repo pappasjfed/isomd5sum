@@ -57,12 +57,23 @@ static inline int poptGetNextOpt(poptContext ctx) {
     
     const char *arg = ctx->argv[ctx->current];
     
-    /* Not an option */
-    if (arg[0] != '-') {
+    /* Not an option or NULL */
+    if (!arg || arg[0] != '-') {
+        return -1;
+    }
+    
+    /* Check for empty option strings */
+    if (arg[1] == '\0') {
         return -1;
     }
     
     int isLong = (arg[1] == '-');
+    
+    /* Handle bare "--" */
+    if (isLong && arg[2] == '\0') {
+        return -1;
+    }
+    
     const char *optName = isLong ? arg + 2 : arg + 1;
     
     /* Search for matching option */

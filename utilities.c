@@ -109,7 +109,7 @@ off_t primary_volume_size(const int isofd, off_t *const offset) {
     if (buffer == NULL)
         return 0;
     off_t tmp = isosize(buffer);
-    free(buffer);
+    aligned_free(buffer);
     return tmp;
 }
 

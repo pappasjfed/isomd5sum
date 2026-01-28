@@ -2,6 +2,17 @@
 
 This document describes how to build the isomd5sum tools for Windows.
 
+## Pre-built Binaries
+
+Pre-built Windows executables are available from the GitHub Releases page:
+https://github.com/pappasjfed/isomd5sum/releases
+
+Download the appropriate zip file:
+- `isomd5sum-*-windows-x64-msvc.zip` - Built with Visual Studio (recommended)
+- `isomd5sum-*-windows-x64-mingw.zip` - Built with MinGW-w64 (alternative)
+
+Extract the zip file and the executables are ready to use.
+
 ## Prerequisites
 
 ### Windows Build Requirements

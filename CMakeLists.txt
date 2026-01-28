@@ -64,6 +64,12 @@ target_link_libraries(implantisomd5 implantisomd5_static)
 add_executable(checkisomd5 checkisomd5.c)
 target_link_libraries(checkisomd5 checkisomd5_static)
 
+# Link Windows-specific libraries
+if(WIN32)
+    target_link_libraries(implantisomd5 ws2_32)
+    target_link_libraries(checkisomd5 ws2_32)
+endif()
+
 # Link popt if available
 if(POPT_FOUND)
     if(POPT_LINK_LIBRARIES)

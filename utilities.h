@@ -29,6 +29,8 @@
 #include "win32_compat.h"
 #else
 #include <sys/types.h>
+/* On non-Windows, aligned_alloc uses regular free */
+#define aligned_free(ptr) free(ptr)
 #endif
 
 #include "md5.h"
