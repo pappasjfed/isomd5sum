@@ -159,6 +159,7 @@ jobs:
           
           Write-Host ""
           Write-Host "All tests passed! ✓"
+          exit 0
   
   build-mingw:
     name: Build with MinGW (Cross-compile)
