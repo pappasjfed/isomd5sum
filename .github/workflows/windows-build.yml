@@ -85,6 +85,7 @@ jobs:
           .\implantisomd5.exe --help 2>&1 | Out-Null
           if ($LASTEXITCODE -ne 1) { Write-Host "Note: implantisomd5 --help returned $LASTEXITCODE" }
           Write-Host "✓ Executables can run"
+          exit 0
       
       - name: Create test ISO
         run: |
