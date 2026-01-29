@@ -2,7 +2,7 @@ name: Windows Build and Release
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, develop ]
     tags:
       - 'v*'
   pull_request:
@@ -283,5 +283,100 @@ jobs:
             See `checksums.txt` for SHA256 checksums of the release files.
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+  create-prerelease:
+    name: Create Pre-release (Develop Branch)
+    runs-on: ubuntu-latest
+    needs: [build-windows, test-windows, build-mingw]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    permissions:
+      contents: write  # Needed to create releases
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download MSVC artifacts
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: isomd5sum-windows-x64
+          path: ./release-msvc
+      
+      - name: Download MinGW artifacts
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: isomd5sum-windows-x64-mingw
+          path: ./release-mingw
+      
+      - name: Generate version info
+        id: version
+        run: |
+          # Generate beta version with timestamp
+          TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          VERSION="beta-${TIMESTAMP}-${SHORT_SHA}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Generated version: ${VERSION}"
+      
+      - name: Create release archives
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Create MSVC zip
+          cd release-msvc
+          zip -r ../isomd5sum-${VERSION}-windows-x64-msvc.zip .
+          cd ..
+          
+          # Create MinGW zip
+          cd release-mingw
+          zip -r ../isomd5sum-${VERSION}-windows-x64-mingw.zip .
+          cd ..
+          
+          # Calculate checksums
+          sha256sum isomd5sum-${VERSION}-windows-x64-msvc.zip > checksums.txt
+          sha256sum isomd5sum-${VERSION}-windows-x64-mingw.zip >> checksums.txt
+      
+      - name: Create Pre-release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: "Pre-release ${{ steps.version.outputs.version }}"
+          files: |
+            isomd5sum-*.zip
+            checksums.txt
+          body: |
+            ## ⚠️ Pre-release / Beta Build
+            
+            This is an **automated pre-release** from the `develop` branch.
+            
+            **⚠️ Warning**: This is a development build and may be unstable. Use at your own risk!
+            
+            ### Build Information
+            - **Branch**: develop
+            - **Commit**: ${{ github.sha }}
+            - **Build Date**: ${{ steps.version.outputs.version }}
+            
+            ### Downloads
+            - **MSVC Build** (`isomd5sum-*-windows-x64-msvc.zip`): Built with Visual Studio 2022
+            - **MinGW Build** (`isomd5sum-*-windows-x64-mingw.zip`): Built with MinGW-w64
+            
+            ### What's included
+            - `checkisomd5.exe` - Check MD5 checksums embedded in ISO images
+            - `implantisomd5.exe` - Implant MD5 checksums into ISO images
+            - Documentation files
+            
+            ### Usage
+            See `WINDOWS_BUILD.txt` included in the archive for detailed usage instructions.
+            
+            ### Checksums
+            See `checksums.txt` for SHA256 checksums of the release files.
+            
+            ---
+            
+            For stable releases, see releases tagged with version numbers (e.g., v1.0.0).
+          draft: false
+          prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
