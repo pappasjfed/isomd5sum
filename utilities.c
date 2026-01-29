@@ -71,10 +71,23 @@ static off_t isosize(const unsigned char *const buffer) {
      * number is converted to the systems endianness without knowing the
      * endianness of the system.
      */
+#ifdef _WIN32
+    /* Debug: Print the bytes being read for isosize */
+    fprintf(stderr, "DEBUG: isosize bytes at offset %d: [%02x %02x %02x %02x]\n",
+            SIZE_OFFSET, buffer[SIZE_OFFSET], buffer[SIZE_OFFSET+1],
+            buffer[SIZE_OFFSET+2], buffer[SIZE_OFFSET+3]);
+#endif
+    
     off_t result = buffer[SIZE_OFFSET] * 0x1000000 +
                    buffer[SIZE_OFFSET + 1] * 0x10000 +
                    buffer[SIZE_OFFSET + 2] * 0x100 + buffer[SIZE_OFFSET + 3];
     result *= SECTOR_SIZE;
+    
+#ifdef _WIN32
+    fprintf(stderr, "DEBUG: isosize calculated: %lld bytes (%lld sectors)\n",
+            (long long)result, (long long)(result / SECTOR_SIZE));
+#endif
+    
     return result;
 }
 
