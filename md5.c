@@ -82,19 +82,19 @@ void MD5_Init(struct MD5Context *ctx)
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
-void MD5_Update(struct MD5Context *ctx, unsigned const char *buf, size_t len)
+void MD5_Update(struct MD5Context *ctx, unsigned const char *buf, unsigned len)
 {
         uint32 t;
         uint32 len_bits;
 
-        /* Update bitcount - use explicit operations to avoid platform issues */
+        /* Update bitcount */
         
         t = ctx->bits[0];
-        len_bits = ((uint32)len) << 3;  /* Convert bytes to bits */
+        len_bits = len << 3;  /* Convert bytes to bits */
         ctx->bits[0] = t + len_bits;
         if (ctx->bits[0] < t)  /* Check for overflow/carry */
                 ctx->bits[1]++; /* Carry from low to high */
-        ctx->bits[1] += (uint32)(len >> 29);  /* Add upper bits */
+        ctx->bits[1] += len >> 29;  /* Add upper bits */
 
         t = (t >> 3) & 0x3f;    /* Bytes already in shsInfo->data */
 
