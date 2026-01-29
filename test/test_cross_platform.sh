@@ -15,7 +15,15 @@ NC='\033[0m'
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PLATFORM=$(uname -s)
+
+# Detect platform and normalize name for consistent ISO naming
+case "$(uname -s)" in
+    Linux*)              PLATFORM="Linux" ;;
+    MINGW*|MSYS*|CYGWIN*) PLATFORM="Windows" ;;
+    Darwin*)             PLATFORM="macOS" ;;
+    *)                   PLATFORM=$(uname -s) ;;
+esac
+
 CROSS_PLATFORM_DIR="${SCRIPT_DIR}/cross_platform"
 VERBOSE=false
 
