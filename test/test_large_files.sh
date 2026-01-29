@@ -40,7 +40,7 @@ Test isomd5sum tools with synthetic ISO files of various sizes.
 Options:
     -h, --help          Show this help message
     -f, --full          Run full test suite (includes DVD, DVD-DL, BD sizes)
-    -q, --quick         Run quick tests only (tiny, small, cd) [default]
+    -q, --quick         Run quick tests only (small, cd) [default]
     -s, --size SIZE     Test specific size (tiny|small|cd|dvd|dvd_dl|bd)
     -v, --verbose       Verbose output
     --no-sparse         Don't use sparse files (slower, uses more disk)
@@ -236,7 +236,7 @@ parse_args() {
                 shift
                 ;;
             -q|--quick)
-                TEST_SIZES=("tiny" "small" "cd")
+                TEST_SIZES=("small" "cd")
                 shift
                 ;;
             -s|--size)
