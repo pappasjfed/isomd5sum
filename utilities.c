@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #ifdef _WIN32
 #include "win32_compat.h"
@@ -77,15 +78,21 @@ static off_t isosize(const unsigned char *const buffer) {
     fprintf(stderr, "DEBUG: isosize bytes at offset %d: [%02x %02x %02x %02x]\n",
             SIZE_OFFSET, buffer[SIZE_OFFSET], buffer[SIZE_OFFSET+1],
             buffer[SIZE_OFFSET+2], buffer[SIZE_OFFSET+3]);
+    fprintf(stderr, "DEBUG: sizeof(off_t)=%zu, sizeof(int64_t)=%zu\n", 
+            sizeof(off_t), sizeof(int64_t));
 #endif
     
-    /* Calculate sector count using explicit 64-bit arithmetic step by step
-     * to avoid any possibility of 32-bit overflow on Windows/MSVC */
-    off_t result = 0;
-    result += ((off_t)buffer[SIZE_OFFSET]) << 24;      /* byte 0 * 2^24 */
-    result += ((off_t)buffer[SIZE_OFFSET + 1]) << 16;  /* byte 1 * 2^16 */
-    result += ((off_t)buffer[SIZE_OFFSET + 2]) << 8;   /* byte 2 * 2^8 */
-    result += ((off_t)buffer[SIZE_OFFSET + 3]);        /* byte 3 */
+    /* Use explicit int64_t to ensure 64-bit arithmetic on all platforms */
+    int64_t result = 0;
+    result += ((int64_t)buffer[SIZE_OFFSET]) << 24;      /* byte 0 * 2^24 */
+    result += ((int64_t)buffer[SIZE_OFFSET + 1]) << 16;  /* byte 1 * 2^16 */
+    result += ((int64_t)buffer[SIZE_OFFSET + 2]) << 8;   /* byte 2 * 2^8 */
+    result += ((int64_t)buffer[SIZE_OFFSET + 3]);        /* byte 3 */
+    
+#ifdef _WIN32
+    fprintf(stderr, "DEBUG: After bit operations, sectors=%lld (0x%llx)\n",
+            (long long)result, (long long)result);
+#endif
     
     /* Multiply by sector size to get bytes */
     result *= SECTOR_SIZE;
@@ -95,7 +102,7 @@ static off_t isosize(const unsigned char *const buffer) {
             (long long)result, (long long)(result / SECTOR_SIZE));
 #endif
     
-    return result;
+    return (off_t)result;
 }
 
 static size_t starts_with(const char *const buffer, const char *const string) {
