@@ -203,10 +203,10 @@ def main():
     
     try:
         actual_size = create_synthetic_iso(output_file, size_bytes, sparse)
-        print(f"\n✅ Successfully created {output_file}")
+        print(f"\n[OK] Successfully created {output_file}")
         return 0
     except Exception as e:
-        print(f"\n❌ Error creating ISO: {e}")
+        print(f"\n[ERROR] Error creating ISO: {e}")
         import traceback
         traceback.print_exc()
         return 1
