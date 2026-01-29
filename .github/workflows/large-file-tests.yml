@@ -1,0 +1,178 @@
+name: Large File Tests
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-large-files-linux:
+    name: Test Large Files (Linux)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpopt-dev python3
+      
+      - name: Build tools
+        run: |
+          make checkisomd5 implantisomd5
+      
+      - name: Run large file tests
+        run: |
+          cd test
+          ./test_large_files.sh --quick --verbose
+      
+      - name: Create cross-platform test ISOs
+        run: |
+          cd test
+          ./test_cross_platform.sh --create --verbose
+      
+      - name: Upload Linux test ISOs
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-test-isos
+          path: test/cross_platform/
+          retention-days: 7
+  
+  test-cross-platform-windows:
+    name: Test Cross-Platform (Linux→Windows)
+    runs-on: windows-latest
+    needs: test-large-files-linux
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up CMake
+        uses: lukka/get-cmake@latest
+      
+      - name: Download Linux test ISOs
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-test-isos
+          path: test/cross_platform
+      
+      - name: Build Windows tools
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --config Release
+      
+      - name: Verify Linux ISOs on Windows
+        shell: pwsh
+        run: |
+          Write-Host "=========================================="
+          Write-Host "Cross-Platform Test: Linux → Windows"
+          Write-Host "=========================================="
+          
+          $checkTool = "build\Release\checkisomd5.exe"
+          $testIsos = Get-ChildItem -Path "test\cross_platform" -Filter "Linux_*.iso"
+          
+          if ($testIsos.Count -eq 0) {
+            Write-Host "❌ No Linux test ISOs found"
+            exit 1
+          }
+          
+          $passed = 0
+          $failed = 0
+          
+          foreach ($iso in $testIsos) {
+            Write-Host ""
+            Write-Host "Testing: $($iso.Name)"
+            Write-Host "Size: $([math]::Round($iso.Length / 1MB, 2)) MB"
+            
+            $output = & $checkTool $iso.FullName 2>&1 | Out-String
+            
+            if ($LASTEXITCODE -eq 0 -and $output -match "PASS") {
+              Write-Host "✅ PASSED: $($iso.Name)"
+              $passed++
+            } else {
+              Write-Host "❌ FAILED: $($iso.Name)"
+              Write-Host "Output: $output"
+              $failed++
+            }
+          }
+          
+          Write-Host ""
+          Write-Host "=========================================="
+          Write-Host "Summary"
+          Write-Host "=========================================="
+          Write-Host "Passed: $passed"
+          Write-Host "Failed: $failed"
+          
+          if ($failed -gt 0) {
+            Write-Host "❌ Some tests failed"
+            exit 1
+          } else {
+            Write-Host "✅ All cross-platform tests passed!"
+          }
+  
+  test-cross-platform-linux:
+    name: Test Cross-Platform (Windows→Linux)
+    runs-on: ubuntu-latest
+    needs: test-cross-platform-windows
+    if: false  # Disabled for now - requires Windows ISOs to be created first
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpopt-dev python3
+      
+      - name: Build tools
+        run: |
+          make checkisomd5
+      
+      - name: Download Windows test ISOs
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-test-isos
+          path: test/cross_platform
+      
+      - name: Verify Windows ISOs on Linux
+        run: |
+          echo "=========================================="
+          echo "Cross-Platform Test: Windows → Linux"
+          echo "=========================================="
+          
+          cd test
+          
+          count=0
+          for iso in cross_platform/Windows_*.iso; do
+            if [ -f "$iso" ]; then
+              echo ""
+              echo "Testing: $(basename $iso)"
+              echo "Size: $(du -h $iso | cut -f1)"
+              
+              if ../checkisomd5 "$iso" 2>&1 | grep -q "PASS"; then
+                echo "✅ PASSED: $(basename $iso)"
+                ((count++))
+              else
+                echo "❌ FAILED: $(basename $iso)"
+                exit 1
+              fi
+            fi
+          done
+          
+          if [ $count -gt 0 ]; then
+            echo ""
+            echo "✅ All $count cross-platform tests passed!"
+          else
+            echo "❌ No Windows ISOs found to test"
+            exit 1
+          fi
