@@ -38,7 +38,7 @@
 #include "libcheckisomd5.h"
 #include "utilities.h"
 
-static void clear_appdata(unsigned char *const buffer, const size_t size, const off_t appdata_offset, const off_t offset) {
+static void clear_appdata(unsigned char *const buffer, const size_t size, const int64_t appdata_offset, const int64_t offset) {
     static const ssize_t buffer_start = 0;
     const ssize_t difference = appdata_offset - offset;
     if (-APPDATA_SIZE <= difference && difference <= (ssize_t) size) {
