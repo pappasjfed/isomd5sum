@@ -18,7 +18,7 @@ struct MD5Context {
 };
 
 void MD5_Init(struct MD5Context *);
-void MD5_Update(struct MD5Context *, unsigned const char *, unsigned);
+void MD5_Update(struct MD5Context *, unsigned const char *, size_t);
 void MD5_Final(unsigned char digest[16], struct MD5Context *);
 
 /*

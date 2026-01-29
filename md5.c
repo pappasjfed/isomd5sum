@@ -82,16 +82,22 @@ void MD5_Init(struct MD5Context *ctx)
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
-void MD5_Update(struct MD5Context *ctx, unsigned const char *buf, unsigned len)
+void MD5_Update(struct MD5Context *ctx, unsigned const char *buf, size_t len)
 {
         uint32 t;
 
-        /* Update bitcount */
-
+        /* Update bitcount - handle size_t properly for large files */
+        /* Convert bytes to bits. For large files (>4GB), we need to handle
+         * the upper bits properly. The bit count is stored in two uint32s,
+         * giving us 2^64 bits = 2^61 bytes (2 exabytes) capacity.
+         */
+        
         t = ctx->bits[0];
-        if ((ctx->bits[0] = t + ((uint32) len << 3)) < t)
+        /* Add lower 29 bits of len (shifted left by 3 to convert to bits) */
+        if ((ctx->bits[0] = t + ((uint32)(len & 0x1FFFFFFF) << 3)) < t)
                 ctx->bits[1]++; /* Carry from low to high */
-        ctx->bits[1] += len >> 29;
+        /* Add upper bits of len to high word */
+        ctx->bits[1] += (uint32)(len >> 29);
 
         t = (t >> 3) & 0x3f;    /* Bytes already in shsInfo->data */
 

@@ -120,7 +120,7 @@ int implantISOFD(int isofd, int supported, int forceit, int quiet, char **errstr
         if (nread <= 0L)
             break;
 
-        MD5_Update(&hashctx, buffer, (unsigned int) nread);
+        MD5_Update(&hashctx, buffer, (size_t) nread);
         const size_t current_fragment = offset / fragment_size;
         const size_t fragmentsize = FRAGMENT_SUM_SIZE / FRAGMENT_COUNT;
         /* If we're onto the next fragment, calculate the previous sum and check. */
