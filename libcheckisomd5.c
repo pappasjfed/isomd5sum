@@ -136,7 +136,6 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
         clear_appdata(buffer, nread, info->offset + APPDATA_OFFSET, offset);
 
         MD5_Update(&hashctx, buffer, (size_t) nread);
-        offset += nread;  /* Update offset before checking fragment boundaries */
         if (info->fragmentcount) {
             const size_t current_fragment = offset / fragment_size;
             const size_t fragmentsize = FRAGMENT_SUM_SIZE / info->fragmentcount;
@@ -163,6 +162,7 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
                 previous_fragment = current_fragment;
             }
         }
+        offset += nread;
         if (cb)
             if (cb(cbdata, (long long) offset, (long long) total_size)) {
                 free(info);
