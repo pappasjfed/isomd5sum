@@ -143,7 +143,7 @@ struct volume_info *const parsepvd(const int isofd) {
     result->offset = offset;
     result->isosize = isosize(aligned_buffer);
 
-    free(aligned_buffer);
+    aligned_free(aligned_buffer);
 
     for (size_t index = 0; index < APPDATA_SIZE;) {
         size_t len;
