@@ -20,7 +20,6 @@
  */
 
 #include <string.h>
-#include <stdint.h>
 
 #ifdef _WIN32
 /* Windows doesn't have endian.h, define endianness macros */
@@ -87,18 +86,14 @@ void MD5_Update(struct MD5Context *ctx, unsigned const char *buf, size_t len)
 {
         uint32 t;
 
-        /* Save old bit count to calculate buffered bytes */
-        t = (ctx->bits[0] >> 3) & 0x3f;    /* Bytes already in ctx->in */
+        /* Update bitcount */
 
-        /* Update bitcount - handle size_t properly for large files */
-        /* Use explicit 64-bit arithmetic to avoid platform-specific issues.
-         * The bit count is stored in two uint32s: bits[0] = low, bits[1] = high,
-         * giving us 2^64 bits = 2^61 bytes (2 exabytes) capacity.
-         */
-        uint64_t total_bits = ((uint64_t)ctx->bits[1] << 32) | ctx->bits[0];
-        total_bits += (uint64_t)len << 3;  // Convert bytes to bits
-        ctx->bits[0] = (uint32)total_bits;
-        ctx->bits[1] = (uint32)(total_bits >> 32);
+        t = ctx->bits[0];
+        if ((ctx->bits[0] = t + ((uint32) len << 3)) < t)
+                ctx->bits[1]++; /* Carry from low to high */
+        ctx->bits[1] += (uint32)(len >> 29);
+
+        t = (t >> 3) & 0x3f;    /* Bytes already in shsInfo->data */
 
         /* Handle any leading odd-sized chunks */
 
