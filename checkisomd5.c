@@ -21,8 +21,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32
+#include "win32_compat.h"
+#include "simple_popt.h"
+/* Windows doesn't have termios, we'll provide simplified version */
+#include <conio.h>
+#else
 #include <popt.h>
 #include <termios.h>
+#endif
 
 #include "md5.h"
 #include "libcheckisomd5.h"
@@ -34,6 +42,15 @@ struct progressCBData {
 };
 
 int user_bailing_out(void) {
+#ifdef _WIN32
+    /* Windows implementation using _kbhit() and _getch() */
+    if (_kbhit()) {
+        int ch = _getch();
+        if (ch == 27) /* ESC key */
+            return 1;
+    }
+    return 0;
+#else
     struct timeval timev;
     fd_set rfds;
 
@@ -47,6 +64,7 @@ int user_bailing_out(void) {
         return 1;
 
     return 0;
+#endif
 }
 
 static int outputCB(void *const co, const long long offset, const long long total) {
@@ -167,6 +185,10 @@ int main(int argc, const char **argv) {
 
     printf("Press [Esc] to abort check.\n");
 
+#ifdef _WIN32
+    /* Windows doesn't need terminal configuration for _kbhit() */
+    rc = mediaCheckFile(args[0], outputCB, &data);
+#else
     static struct termios oldt;
     struct termios newt;
     tcgetattr(0, &oldt);
@@ -175,6 +197,7 @@ int main(int argc, const char **argv) {
     tcsetattr(0, TCSANOW, &newt);
     rc = mediaCheckFile(args[0], outputCB, &data);
     tcsetattr(0, TCSANOW, &oldt);
+#endif
 
     if (data.verbose)
         printf("\n");

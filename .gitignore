@@ -5,3 +5,13 @@ implantisomd5
 *~
 *.a
 *.tar.bz2
+build/
+build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile.cmake
+*.exe
+*.dll
+*.lib
+*.exp

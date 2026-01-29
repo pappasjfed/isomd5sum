@@ -2,9 +2,9 @@ PYTHON ?= python3
 PYTHONSITEPACKAGES := $(shell $(PYTHON) -c 'import site; print(site.getsitepackages()[0])')
 PYTHONINCLUDE := $(shell $(PYTHON)-config --includes)
 
-VERSION=1.2.3
+VERSION=1.2.5
 
-ifneq (,$(filter sparc64 ppc64 ppc64le x86_64 s390x aarch64 mips64,$(shell uname -m)))
+ifneq (,$(filter sparc64 ppc64 ppc64le x86_64 s390x aarch64 mips64 riscv64,$(shell uname -m)))
 LIBDIR = lib64
 else
 LIBDIR = lib

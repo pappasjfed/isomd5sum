@@ -20,7 +20,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifdef _WIN32
+#include "simple_popt.h"
+#else
 #include <popt.h>
+#endif
 
 #include "md5.h"
 #include "libimplantisomd5.h"

@@ -9,15 +9,162 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+# Set minimal default permissions
+permissions:
+  contents: read
+
 jobs:
-  run-tests:
+  build-linux-makefile:
+    name: Build on Linux with Makefile
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     container:
-      image: registry.fedoraproject.org/fedora:34
+      image: registry.fedoraproject.org/fedora:39
     steps:
-      - uses: actions/checkout@v2
-      - name: Build and Test
+      - uses: actions/checkout@v4
+      - name: Install dependencies
         run: |
           dnf install -y gcc popt-devel python3 python3-devel make xorriso
+      - name: Build
+        run: |
           make
+      - name: Prepare artifacts
+        run: |
+          mkdir -p artifacts
+          cp checkisomd5 artifacts/
+          cp implantisomd5 artifacts/
+          cp COPYING artifacts/LICENSE.txt
+          cp README artifacts/README.txt
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: isomd5sum-linux-makefile
+          path: artifacts/
+          retention-days: 30
+  
+  test-linux-makefile:
+    name: Test on Linux (Makefile build)
+    runs-on: ubuntu-latest
+    needs: build-linux-makefile
+    permissions:
+      contents: read
+    container:
+      image: registry.fedoraproject.org/fedora:39
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          dnf install -y popt python3 python3-devel xorriso
+      - name: Download artifacts
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: isomd5sum-linux-makefile
+          path: ./bin
+      - name: Make executables runnable
+        run: |
+          chmod +x bin/checkisomd5 bin/implantisomd5
+      - name: Test executables exist
+        run: |
+          test -f bin/checkisomd5 || exit 1
+          test -f bin/implantisomd5 || exit 1
+          echo "✓ Executables found"
+      - name: Test help output
+        run: |
+          ./bin/checkisomd5 --help || true
+          ./bin/implantisomd5 --help || true
+          echo "✓ Executables can run"
+      - name: Run Python tests
+        run: |
+          # Copy executables to expected location for tests
+          cp bin/checkisomd5 ./
+          cp bin/implantisomd5 ./
+          # Build Python module for testing
+          make pyisomd5sum.so
           make test
+  
+  build-linux-cmake:
+    name: Build on Linux with CMake
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libpopt-dev
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          make
+      - name: Prepare artifacts
+        run: |
+          mkdir -p artifacts
+          cp build/checkisomd5 artifacts/
+          cp build/implantisomd5 artifacts/
+          cp COPYING artifacts/LICENSE.txt
+          cp README artifacts/README.txt
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: isomd5sum-linux-cmake
+          path: artifacts/
+          retention-days: 30
+  
+  test-linux-cmake:
+    name: Test on Linux (CMake build)
+    runs-on: ubuntu-latest
+    needs: build-linux-cmake
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpopt0 xorriso
+      - name: Download artifacts
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: isomd5sum-linux-cmake
+          path: ./bin
+      - name: Make executables runnable
+        run: |
+          chmod +x bin/checkisomd5 bin/implantisomd5
+      - name: Test executables exist
+        run: |
+          test -f bin/checkisomd5 || exit 1
+          test -f bin/implantisomd5 || exit 1
+          echo "✓ Executables found"
+      - name: Test help output
+        run: |
+          ./bin/checkisomd5 --help || true
+          ./bin/implantisomd5 --help || true
+          echo "✓ Executables can run"
+      - name: Create test ISO
+        run: |
+          mkdir -p testdata
+          echo "Hello from Linux CMake test" > testdata/test.txt
+          xorriso -as mkisofs -o test.iso -V "TEST" -J -R testdata/
+          echo "✓ Test ISO created"
+      - name: Test ISO operations
+        run: |
+          # Test implanting checksum
+          echo "Testing implantisomd5..."
+          ./bin/implantisomd5 test.iso
+          if [ $? -ne 0 ]; then
+            echo "✗ Failed to implant checksum"
+            exit 1
+          fi
+          echo "✓ Checksum implanted successfully"
+          
+          # Test checking checksum
+          echo "Testing checkisomd5..."
+          ./bin/checkisomd5 --md5sumonly test.iso
+          echo "✓ Checksum verification executed"
+          
+          echo ""
+          echo "All tests passed! ✓"

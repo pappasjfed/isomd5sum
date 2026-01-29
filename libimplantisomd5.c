@@ -24,11 +24,16 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#ifdef _WIN32
+#include "win32_compat.h"
+#else
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <string.h>
 #include <unistd.h>
+#endif
 
 #include "md5.h"
 #include "libimplantisomd5.h"
@@ -126,7 +131,7 @@ int implantISOFD(int isofd, int supported, int forceit, int quiet, char **errstr
 
         offset += nread;
     }
-    free(buffer);
+    aligned_free(buffer);
 
     char hashsum[HASH_SIZE + 1];
     md5sum(hashsum, &hashctx);
