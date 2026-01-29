@@ -45,6 +45,43 @@ jobs:
           path: test/cross_platform/
           retention-days: 7
   
+  test-large-files-windows:
+    name: Test Large Files (Windows)
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up CMake
+        uses: lukka/get-cmake@latest
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      
+      - name: Build Windows tools
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --config Release
+      
+      - name: Create cross-platform test ISOs
+        shell: bash
+        run: |
+          cd test
+          export PATH="../build/Release:$PATH"
+          ./test_cross_platform.sh --create --medium --verbose
+      
+      - name: Upload Windows test ISOs
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-test-isos
+          path: test/cross_platform/
+          retention-days: 7
+  
   test-cross-platform-windows:
     name: Test Cross-Platform (Linux→Windows)
     runs-on: windows-latest
@@ -122,8 +159,7 @@ jobs:
   test-cross-platform-linux:
     name: Test Cross-Platform (Windows→Linux)
     runs-on: ubuntu-latest
-    needs: test-large-files-linux
-    if: false  # Disabled for now - requires Windows ISOs to be created first
+    needs: test-large-files-windows
     
     steps:
       - name: Checkout code
