@@ -70,6 +70,7 @@ static off_t isosize(const unsigned char *const buffer) {
      * Doing multiplications so that it can be guaranteed that the big endian
      * number is converted to the systems endianness without knowing the
      * endianness of the system.
+     * CRITICAL: Must use explicit off_t casts to ensure 64-bit arithmetic!
      */
 #ifdef _WIN32
     /* Debug: Print the bytes being read for isosize */
@@ -78,9 +79,11 @@ static off_t isosize(const unsigned char *const buffer) {
             buffer[SIZE_OFFSET+2], buffer[SIZE_OFFSET+3]);
 #endif
     
-    off_t result = buffer[SIZE_OFFSET] * 0x1000000 +
-                   buffer[SIZE_OFFSET + 1] * 0x10000 +
-                   buffer[SIZE_OFFSET + 2] * 0x100 + buffer[SIZE_OFFSET + 3];
+    /* Use explicit off_t casts to force 64-bit arithmetic on all platforms */
+    off_t result = ((off_t)buffer[SIZE_OFFSET]) * 0x1000000LL +
+                   ((off_t)buffer[SIZE_OFFSET + 1]) * 0x10000LL +
+                   ((off_t)buffer[SIZE_OFFSET + 2]) * 0x100LL + 
+                   ((off_t)buffer[SIZE_OFFSET + 3]);
     result *= SECTOR_SIZE;
     
 #ifdef _WIN32

@@ -75,7 +75,10 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
     
 #ifdef _WIN32
     /* Debug: Log file size and reading progress on Windows */
-    fprintf(stderr, "DEBUG: Starting MD5 check - total_size=%lld bytes\n", (long long)total_size);
+    fprintf(stderr, "DEBUG: Starting MD5 check - total_size=%lld bytes (%.2f GB)\n", 
+            (long long)total_size, (double)total_size / (1024.0*1024.0*1024.0));
+    fprintf(stderr, "DEBUG: Buffer size: %zu bytes\n", buffer_size);
+    fprintf(stderr, "DEBUG: Expected number of reads: ~%lld\n", (long long)(total_size / buffer_size + 1));
 #endif
     
     while (offset < total_size) {
@@ -85,16 +88,32 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
         
 #ifdef _WIN32
         read_count++;
-        if (read_count <= 10 || read_count % 1000 == 0) {
-            fprintf(stderr, "DEBUG: Read #%d: offset=%lld, requested=%zu, got=%zd\n", 
-                    read_count, (long long)offset, nbyte, nread);
+        /* More frequent logging for first reads and periodic updates */
+        if (read_count <= 20 || read_count % 500 == 0 || nread <= 0) {
+            fprintf(stderr, "DEBUG: Read #%d: offset=%lld (%.2f%%), requested=%zu, got=%zd",
+                    read_count, (long long)offset, 
+                    (double)offset * 100.0 / (double)total_size,
+                    nbyte, nread);
+            if (nread > 0) {
+                /* Show a sample of the data */
+                fprintf(stderr, ", first 4 bytes: [%02x %02x %02x %02x]",
+                        buffer[0], buffer[1], buffer[2], buffer[3]);
+            }
+            fprintf(stderr, "\n");
         }
 #endif
         
         if (nread <= 0L) {
 #ifdef _WIN32
-            fprintf(stderr, "DEBUG: Read returned %zd at offset %lld (total_size=%lld), breaking loop. Total bytes read: %lld\n",
-                    nread, (long long)offset, (long long)total_size, (long long)total_bytes_read);
+            fprintf(stderr, "DEBUG: *** Read returned %zd at offset %lld (%.2f%% of file) ***\n",
+                    nread, (long long)offset, (double)offset * 100.0 / (double)total_size);
+            fprintf(stderr, "DEBUG: *** Expected to reach offset %lld but stopped early ***\n",
+                    (long long)total_size);
+            fprintf(stderr, "DEBUG: *** Total bytes successfully read: %lld (%.2f GB) ***\n",
+                    (long long)total_bytes_read, (double)total_bytes_read / (1024.0*1024.0*1024.0));
+            fprintf(stderr, "DEBUG: *** Missing %lld bytes (%.2f GB) ***\n",
+                    (long long)(total_size - total_bytes_read),
+                    (double)(total_size - total_bytes_read) / (1024.0*1024.0*1024.0));
 #endif
             break;
         }
@@ -140,8 +159,16 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
     aligned_free(buffer);
 
 #ifdef _WIN32
-    fprintf(stderr, "DEBUG: Finished reading. Total bytes read: %lld, expected: %lld\n",
-            (long long)total_bytes_read, (long long)total_size);
+    fprintf(stderr, "DEBUG: ======== READ COMPLETE ========\n");
+    fprintf(stderr, "DEBUG: Total reads performed: %d\n", read_count);
+    fprintf(stderr, "DEBUG: Total bytes read: %lld / %lld (%.2f%%)\n",
+            (long long)total_bytes_read, (long long)total_size,
+            (double)total_bytes_read * 100.0 / (double)total_size);
+    fprintf(stderr, "DEBUG: Final offset: %lld\n", (long long)offset);
+    if (total_bytes_read < total_size) {
+        fprintf(stderr, "DEBUG: *** WARNING: Incomplete read! Missing %lld bytes ***\n",
+                (long long)(total_size - total_bytes_read));
+    }
 #endif
 
     if (cb)
@@ -151,7 +178,9 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
     md5sum(hashsum, &hashctx);
 
 #ifdef _WIN32
-    fprintf(stderr, "DEBUG: Calculated MD5: %s, Expected MD5: %s\n", hashsum, info->hashsum);
+    fprintf(stderr, "DEBUG: Calculated MD5: %s\n", hashsum);
+    fprintf(stderr, "DEBUG: Expected MD5:   %s\n", info->hashsum);
+    fprintf(stderr, "DEBUG: Match: %s\n", strcmp(info->hashsum, hashsum) == 0 ? "YES" : "NO");
 #endif
 
     int failed = strcmp(info->hashsum, hashsum);
