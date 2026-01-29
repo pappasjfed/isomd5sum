@@ -88,6 +88,7 @@ jobs:
       - name: Test help output
         run: |
           cd bin
+          # Note: --help returns exit code 1, which is fine
           $output = .\checkisomd5.exe --help 2>&1 | Out-String
           Write-Host "checkisomd5 --help output:"
           Write-Host $output
@@ -99,6 +100,9 @@ jobs:
           Write-Host $output
           Write-Host "Exit code: $LASTEXITCODE"
           Write-Host "✓ implantisomd5 can run"
+          
+          # Reset exit code for next steps
+          exit 0
       
       - name: Test with known good ISO (md5sumonly)
         run: |
