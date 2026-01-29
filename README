@@ -2,6 +2,33 @@ isomd5sum provides a way of making use of the ISO9660 application data
 area to store md5sum data about the iso.  This allows you to check the
 iso given nothing more than the iso itself.
 
+## Cross-Platform Support
+
+isomd5sum now supports Windows in addition to Linux/Unix platforms:
+- Check embedded MD5 hashes on ISO images and physical media on Windows
+- Inject MD5 hashes into ISO images created on Windows
+- Build native Windows executables (.exe)
+
+See WINDOWS_BUILD.md for Windows build instructions.
+
+## Building
+
+### Linux/Unix (using Makefile)
+```bash
+make
+make install
+```
+
+### Cross-Platform (using CMake)
+```bash
+mkdir build && cd build
+cmake ..
+make
+make install
+```
+
+For Windows builds, see WINDOWS_BUILD.md for detailed instructions.
+
 isomd5sum is hosted on GitHub. The source can be
 grabbed via git with
   git clone https://github.com/rhinstaller/isomd5sum.git

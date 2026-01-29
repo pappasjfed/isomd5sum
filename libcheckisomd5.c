@@ -23,11 +23,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#ifdef _WIN32
+#include "win32_compat.h"
+#else
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <string.h>
+#endif
 
 #include "md5.h"
 #include "libcheckisomd5.h"
@@ -94,7 +99,7 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
                                        info->fragmentsums, NULL)) {
                     /* Exit immediately if current fragment sum is incorrect */
                     free(info);
-                    free(buffer);
+                    aligned_free(buffer);
                     return ISOMD5SUM_CHECK_FAILED;
                 }
                 previous_fragment = current_fragment;
@@ -104,11 +109,11 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
         if (cb)
             if (cb(cbdata, (long long) offset, (long long) total_size)) {
                 free(info);
-                free(buffer);
+                aligned_free(buffer);
                 return ISOMD5SUM_CHECK_ABORTED;
             }
     }
-    free(buffer);
+    aligned_free(buffer);
 
     if (cb)
         cb(cbdata, (long long) info->isosize, (long long) total_size);

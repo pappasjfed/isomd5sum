@@ -24,13 +24,16 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
-#include <sys/types.h>
-
-#include "md5.h"
 
 #ifdef _WIN32
-int getpagesize() { return 2048; }
+#include "win32_compat.h"
+#else
+#include <sys/types.h>
+/* On non-Windows, aligned_alloc uses regular free */
+#define aligned_free(ptr) free(ptr)
 #endif
+
+#include "md5.h"
 
 #ifndef O_BINARY
 #define O_BINARY 0
