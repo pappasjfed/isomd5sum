@@ -138,13 +138,24 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
             const size_t fragmentsize = FRAGMENT_SUM_SIZE / info->fragmentcount;
             /* If we're onto the next fragment, calculate the previous sum and check. */
             if (current_fragment != previous_fragment) {
+#ifdef _WIN32
+                fprintf(stderr, "DEBUG: Validating fragment %zu at offset %lld\n",
+                        current_fragment, (long long)offset);
+#endif
                 if (!validate_fragment(&hashctx, current_fragment, fragmentsize,
                                        info->fragmentsums, NULL)) {
+#ifdef _WIN32
+                    fprintf(stderr, "DEBUG: *** Fragment %zu validation FAILED! ***\n", current_fragment);
+                    fprintf(stderr, "DEBUG: *** Exiting early due to fragment validation failure ***\n");
+#endif
                     /* Exit immediately if current fragment sum is incorrect */
                     free(info);
                     aligned_free(buffer);
                     return ISOMD5SUM_CHECK_FAILED;
                 }
+#ifdef _WIN32
+                fprintf(stderr, "DEBUG: Fragment %zu validated successfully\n", current_fragment);
+#endif
                 previous_fragment = current_fragment;
             }
         }
