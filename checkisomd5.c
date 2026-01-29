@@ -127,6 +127,7 @@ int processExitStatus(const int rc) {
     }
 
     fprintf(stderr, "\nThe media check is complete, the result is: %s\n", result);
+    fflush(stderr);
 
     return exit_rc;
 }
@@ -199,8 +200,10 @@ int main(int argc, const char **argv) {
     tcsetattr(0, TCSANOW, &oldt);
 #endif
 
-    if (data.verbose)
+    if (data.verbose) {
         printf("\n");
+        fflush(stdout);
+    }
 
     poptFreeContext(optCon);
     return processExitStatus(rc);

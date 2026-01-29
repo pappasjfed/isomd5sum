@@ -157,6 +157,7 @@ int printMD5SUM(const char *file) {
         printf("Fragment count: %zu\n", info->fragmentcount);
         printf("Supported ISO: %s\n", info->supported ? "yes" : "no");
     }
+    fflush(stdout);
     free(info);
     return 0;
 }
