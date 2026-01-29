@@ -244,6 +244,19 @@ bool validate_fragment(const MD5_CTX *const hashctx, const size_t fragment,
     memcpy(&ctx, hashctx, sizeof(ctx));
     MD5_Final(digest, &ctx);
     size_t j = (fragment - 1) * fragmentsize;
+    
+#ifdef _WIN32
+    /* Debug fragment validation details */
+    fprintf(stderr, "DEBUG:   Fragment %zu: fragmentsize=%zu, offset in fragmentsums=%zu\n",
+            fragment, fragmentsize, j);
+    fprintf(stderr, "DEBUG:   Calculated fragment MD5 (first 3 bytes): %02x %02x %02x\n",
+            digest[0], digest[1], digest[2]);
+    if (fragmentsums != NULL) {
+        fprintf(stderr, "DEBUG:   Expected from fragmentsums: [%c%c%c]\n",
+                fragmentsums[j], fragmentsums[j+1], fragmentsums[j+2]);
+    }
+#endif
+    
     for (size_t i = 0; i < MIN(fragmentsize, HASH_SIZE / 2); i++) {
         char tmp[3];
         /*
@@ -252,8 +265,13 @@ bool validate_fragment(const MD5_CTX *const hashctx, const size_t fragment,
         snprintf(tmp, 3, "%01x", digest[i]);
         if (hashsums != NULL)
             strncat(hashsums, tmp, 1);
-        if (fragmentsums != NULL && tmp[0] != fragmentsums[j++])
+        if (fragmentsums != NULL && tmp[0] != fragmentsums[j++]) {
+#ifdef _WIN32
+            fprintf(stderr, "DEBUG:   Mismatch at byte %zu: got '%c' (%02x), expected '%c'\n",
+                    i, tmp[0], digest[i], fragmentsums[j-1]);
+#endif
             return false;
+        }
     }
     return true;
 }

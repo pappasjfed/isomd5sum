@@ -77,6 +77,9 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
     /* Debug: Log file size and reading progress on Windows */
     fprintf(stderr, "DEBUG: Starting MD5 check - total_size=%lld bytes (%.2f GB)\n", 
             (long long)total_size, (double)total_size / (1024.0*1024.0*1024.0));
+    fprintf(stderr, "DEBUG: Fragment count: %zu, fragment_size=%lld bytes (%.2f MB)\n",
+            info->fragmentcount, (long long)fragment_size, 
+            (double)fragment_size / (1024.0*1024.0));
     fprintf(stderr, "DEBUG: Buffer size: %zu bytes\n", buffer_size);
     fprintf(stderr, "DEBUG: Expected number of reads: ~%lld\n", (long long)(total_size / buffer_size + 1));
 #endif
