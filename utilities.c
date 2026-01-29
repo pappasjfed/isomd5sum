@@ -66,7 +66,7 @@ static unsigned char *read_primary_volume_descriptor(const int fd, off_t *const 
     return sector_buffer;
 }
 
-static off_t isosize(const unsigned char *const buffer) {
+static int64_t isosize(const unsigned char *const buffer) {
     /*
      * Doing multiplications so that it can be guaranteed that the big endian
      * number is converted to the systems endianness without knowing the
@@ -102,7 +102,7 @@ static off_t isosize(const unsigned char *const buffer) {
             (long long)result, (long long)(result / SECTOR_SIZE));
 #endif
     
-    return (off_t)result;
+    return result;  /* Return int64_t directly, no truncation! */
 }
 
 static size_t starts_with(const char *const buffer, const char *const string) {

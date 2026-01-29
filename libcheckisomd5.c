@@ -53,8 +53,8 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
     if (info == NULL)
         return ISOMD5SUM_CHECK_NOT_FOUND;
 
-    const off_t total_size = info->isosize - info->skipsectors * SECTOR_SIZE;
-    const off_t fragment_size = total_size / (info->fragmentcount + 1);
+    const int64_t total_size = info->isosize - info->skipsectors * SECTOR_SIZE;
+    const int64_t fragment_size = total_size / (info->fragmentcount + 1);
     if (cb)
         cb(cbdata, 0LL, (long long) total_size);
 
@@ -69,8 +69,8 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
     buffer = aligned_alloc((size_t) getpagesize(), buffer_size * sizeof(*buffer));
 
     size_t previous_fragment = 0UL;
-    off_t offset = 0LL;
-    off_t total_bytes_read = 0LL;
+    int64_t offset = 0LL;
+    int64_t total_bytes_read = 0LL;
     int read_count = 0;
     
 #ifdef _WIN32

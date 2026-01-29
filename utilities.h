@@ -24,6 +24,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #ifdef _WIN32
 #include "win32_compat.h"
@@ -66,9 +67,9 @@ struct volume_info {
     char fragmentsums[FRAGMENT_SUM_SIZE + 1];
     size_t supported;
     size_t fragmentcount;
-    off_t offset;
-    off_t isosize;
-    off_t skipsectors;
+    int64_t offset;       /* Use int64_t instead of off_t for Windows compatibility */
+    int64_t isosize;      /* Use int64_t instead of off_t for Windows compatibility */
+    int64_t skipsectors;  /* Use int64_t instead of off_t for Windows compatibility */
 };
 
 off_t primary_volume_size(const int isofd, off_t *const offset);
