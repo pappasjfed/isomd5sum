@@ -50,12 +50,13 @@ static unsigned char *read_primary_volume_descriptor(const int fd, off_t *const 
     /* Read n volume descriptors. */
     for (;;) {
         if (read(fd, sector_buffer, SECTOR_SIZE) == -1) {
-            free(sector_buffer);
+            aligned_free(sector_buffer);
             return NULL;
         }
         if (sector_buffer[0] == PRIMARY) {
             break;
         } else if (sector_buffer[0] == SET_TERMINATOR) {
+            aligned_free(sector_buffer);
             return NULL;
         }
         nbyte *= SECTOR_SIZE;
@@ -142,7 +143,7 @@ struct volume_info *const parsepvd(const int isofd) {
     result->offset = offset;
     result->isosize = isosize(aligned_buffer);
 
-    free(aligned_buffer);
+    aligned_free(aligned_buffer);
 
     for (size_t index = 0; index < APPDATA_SIZE;) {
         size_t len;

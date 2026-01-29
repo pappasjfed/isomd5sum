@@ -15,3 +15,8 @@ Makefile.cmake
 *.dll
 *.lib
 *.exp
+
+# Test-generated ISO files (except the original test.iso)
+test/test_*.iso
+test/cross_platform/
+test/*.manifest.txt
