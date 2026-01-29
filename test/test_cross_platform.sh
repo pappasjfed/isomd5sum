@@ -19,6 +19,13 @@ PLATFORM=$(uname -s)
 CROSS_PLATFORM_DIR="${SCRIPT_DIR}/cross_platform"
 VERBOSE=false
 
+# Test sizes - configurable
+TEST_SIZES=("small" "cd")  # Default
+QUICK_SIZES=("small" "cd")
+MEDIUM_SIZES=("small" "cd" "dvd")
+LARGE_SIZES=("small" "cd" "dvd" "dvd_dl")
+FULL_SIZES=("small" "cd" "dvd" "dvd_dl" "bd")
+
 # Tools
 IMPLANT_TOOL=""
 CHECK_TOOL=""
@@ -56,11 +63,21 @@ Options:
     --verify            Verify cross-platform ISOs
     --both              Both create and verify (default)
     --tools-dir DIR     Directory containing tools
+    --quick             Use quick test sizes (small, cd) [default]
+    --medium            Use medium test sizes (small, cd, dvd 4.5GB)
+    --large             Use large test sizes (small, cd, dvd, dvd_dl 8.5GB)
+    --full              Use full test sizes (all including bd 25GB)
+    --sizes SIZE...     Specify custom sizes (tiny|small|cd|dvd|dvd_dl|bd)
 
 Workflow:
     1. Run with --create on Linux to generate ISOs with checksums
     2. Transfer ISOs to Windows (or vice versa)
     3. Run with --verify on Windows to check Linux-created ISOs
+
+Examples:
+    $0 --create --medium              # Create small, cd, and DVD ISOs
+    $0 --verify --verbose             # Verify with verbose output
+    $0 --sizes small dvd              # Custom size selection
     
 EOF
 }
@@ -108,10 +125,10 @@ create_test_isos() {
     
     mkdir -p "$CROSS_PLATFORM_DIR"
     
-    # Create test ISOs of various sizes
-    local sizes=("small" "cd")
+    log_info "Test sizes: ${TEST_SIZES[*]}"
     
-    for size in "${sizes[@]}"; do
+    # Create test ISOs of various sizes
+    for size in "${TEST_SIZES[@]}"; do
         local iso_file="${CROSS_PLATFORM_DIR}/${PLATFORM}_${size}.iso"
         local manifest="${CROSS_PLATFORM_DIR}/${PLATFORM}_manifest.txt"
         
@@ -235,6 +252,30 @@ main() {
             --tools-dir)
                 TOOLS_DIR="$2"
                 shift 2
+                ;;
+            --quick)
+                TEST_SIZES=("${QUICK_SIZES[@]}")
+                shift
+                ;;
+            --medium)
+                TEST_SIZES=("${MEDIUM_SIZES[@]}")
+                shift
+                ;;
+            --large)
+                TEST_SIZES=("${LARGE_SIZES[@]}")
+                shift
+                ;;
+            --full)
+                TEST_SIZES=("${FULL_SIZES[@]}")
+                shift
+                ;;
+            --sizes)
+                TEST_SIZES=()
+                shift
+                while [[ $# -gt 0 ]] && [[ ! "$1" =~ ^-- ]]; do
+                    TEST_SIZES+=("$1")
+                    shift
+                done
                 ;;
             *)
                 log_error "Unknown option: $1"
