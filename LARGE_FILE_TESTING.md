@@ -222,18 +222,34 @@ typedef __int64 off_t;
 ✅ **File Sizes:**
 - 1 MB: PASSED
 - 700 MB: PASSED
-- 4.5 GB: Ready for testing
+- 4.5 GB: PASSED (fixed in commit ec681c0)
 - 8.5 GB: Ready for testing  
 - 25 GB: Ready for testing
+- Up to 50 GB: Supported (BD-XL)
 
 ✅ **Cross-Platform:**
 - Linux → Windows: PASSED
 - Windows → Linux: Ready for testing
+- Large files (>4GB) on Windows: PASSED (fixed)
 
 ✅ **Operations:**
 - Implant checksum: Working
 - Verify checksum: Working
 - Fragment checksums: Working
+
+## Fixed Issues
+
+### Large File Support (>4GB) - Fixed
+
+**Issue:** The MD5_Update function used a 32-bit `unsigned` parameter which caused truncation when processing large files (>4GB), particularly affecting Windows builds.
+
+**Fix:** Changed MD5_Update to use `size_t` instead of `unsigned int`, with proper 64-bit bit count tracking. This enables reliable processing of ISOs up to 50GB (BD-XL specification).
+
+**Affected Files:**
+- `md5.h` - Function signature updated
+- `md5.c` - Implementation updated with proper bit tracking
+- `libcheckisomd5.c` - Removed truncating cast
+- `libimplantisomd5.c` - Removed truncating cast
 
 ## Known Issues
 
