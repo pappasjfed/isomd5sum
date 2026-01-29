@@ -70,12 +70,36 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
 
     size_t previous_fragment = 0UL;
     off_t offset = 0LL;
+    off_t total_bytes_read = 0LL;
+    int read_count = 0;
+    
+#ifdef _WIN32
+    /* Debug: Log file size and reading progress on Windows */
+    fprintf(stderr, "DEBUG: Starting MD5 check - total_size=%lld bytes\n", (long long)total_size);
+#endif
+    
     while (offset < total_size) {
         const size_t nbyte = MIN((size_t)(total_size - offset), buffer_size);
 
         ssize_t nread = read(isofd, buffer, nbyte);
-        if (nread <= 0L)
+        
+#ifdef _WIN32
+        read_count++;
+        if (read_count <= 10 || read_count % 1000 == 0) {
+            fprintf(stderr, "DEBUG: Read #%d: offset=%lld, requested=%zu, got=%zd\n", 
+                    read_count, (long long)offset, nbyte, nread);
+        }
+#endif
+        
+        if (nread <= 0L) {
+#ifdef _WIN32
+            fprintf(stderr, "DEBUG: Read returned %zd at offset %lld (total_size=%lld), breaking loop. Total bytes read: %lld\n",
+                    nread, (long long)offset, (long long)total_size, (long long)total_bytes_read);
+#endif
             break;
+        }
+        
+        total_bytes_read += nread;
 
         /**
          * Originally was added in 2005 because the kernel was returning the
@@ -115,11 +139,20 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
     }
     aligned_free(buffer);
 
+#ifdef _WIN32
+    fprintf(stderr, "DEBUG: Finished reading. Total bytes read: %lld, expected: %lld\n",
+            (long long)total_bytes_read, (long long)total_size);
+#endif
+
     if (cb)
         cb(cbdata, (long long) info->isosize, (long long) total_size);
 
     char hashsum[HASH_SIZE + 1];
     md5sum(hashsum, &hashctx);
+
+#ifdef _WIN32
+    fprintf(stderr, "DEBUG: Calculated MD5: %s, Expected MD5: %s\n", hashsum, info->hashsum);
+#endif
 
     int failed = strcmp(info->hashsum, hashsum);
     free(info);
