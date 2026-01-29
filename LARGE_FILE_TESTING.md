@@ -46,7 +46,10 @@ Automated test suite that creates ISOs, implants checksums, and verifies them.
 cd test
 ./test_large_files.sh
 
-# Full test (all sizes including DVD/BD)
+# Medium test (includes 4.5 GB DVD) - RECOMMENDED for multi-GB testing
+./test_large_files.sh --medium
+
+# Full test (all sizes including DVD-DL and BD)
 ./test_large_files.sh --full
 
 # Test specific size
@@ -88,6 +91,80 @@ cd test
 ./test_cross_platform.sh --both
 # Creates and verifies on same platform
 ```
+
+### 4. Generate Large ISO Script (`test/generate_large_iso.sh`)
+
+Convenience script for quickly generating large multi-GB ISO files.
+
+**Features:**
+- Simple command-line interface
+- Automatic sparse file creation
+- Shows disk usage vs apparent size
+- Provides next-step instructions
+
+**Usage:**
+```bash
+cd test
+
+# Generate 4.5 GB DVD ISO
+./generate_large_iso.sh dvd
+
+# Generate 8.5 GB DVD Dual Layer ISO
+./generate_large_iso.sh dvd_dl my_test.iso
+
+# Generate 25 GB Blu-ray ISO
+./generate_large_iso.sh bd
+```
+
+**Example output:**
+```
+File: test_dvd.iso
+Apparent size: 4.5G
+Disk usage: 8.0M (sparse file)
+```
+
+## Working with Large Files
+
+### Quick Start for Multi-GB Testing
+
+**Recommended approach using medium test suite:**
+```bash
+cd test
+./test_large_files.sh --medium --verbose
+```
+
+This tests:
+- 1 MB (small) - Fast sanity check
+- 700 MB (cd) - CD-sized validation
+- 4.5 GB (dvd) - Multi-GB validation
+
+**Generate and test a specific large ISO:**
+```bash
+cd test
+
+# Generate 8.5 GB DVD-DL ISO
+./generate_large_iso.sh dvd_dl
+
+# Implant checksum
+../implantisomd5 -f test_dvd_dl.iso
+
+# Verify checksum
+../checkisomd5 --verbose test_dvd_dl.iso
+```
+
+### Disk Space Usage
+
+Thanks to sparse files, large ISOs use minimal disk space:
+
+| ISO Size | Apparent Size | Actual Disk Usage |
+|----------|---------------|-------------------|
+| 1 MB     | 1 MB          | 1 MB              |
+| 700 MB   | 700 MB        | ~700 MB           |
+| 4.5 GB   | 4.5 GB        | ~8 MB             |
+| 8.5 GB   | 8.5 GB        | ~4 MB             |
+| 25 GB    | 25 GB         | ~10 MB            |
+
+**Note:** Files < 100 MB are fully written. Files > 100 MB use sparse allocation.
 
 ## CI Integration
 

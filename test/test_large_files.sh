@@ -16,6 +16,7 @@ NC='\033[0m' # No Color
 # Test configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEST_SIZES=("small" "cd")  # Default: quick tests
+MEDIUM_TEST_SIZES=("small" "cd" "dvd")  # Medium tests with DVD
 FULL_TEST_SIZES=("small" "cd" "dvd" "dvd_dl" "bd")
 USE_SPARSE=true
 VERBOSE=false
@@ -40,6 +41,7 @@ Test isomd5sum tools with synthetic ISO files of various sizes.
 Options:
     -h, --help          Show this help message
     -f, --full          Run full test suite (includes DVD, DVD-DL, BD sizes)
+    -m, --medium        Run medium test suite (includes DVD) [recommended for multi-GB testing]
     -q, --quick         Run quick tests only (small, cd) [default]
     -s, --size SIZE     Test specific size (tiny|small|cd|dvd|dvd_dl|bd)
     -v, --verbose       Verbose output
@@ -49,6 +51,9 @@ Options:
 
 Examples:
     $0                  # Quick test with default sizes
+    $0 --medium         # Test with DVD (4.5 GB) included
+    $0 --size dvd       # Test only DVD size
+    $0 --full           # Test all sizes including DVD-DL and BD
     $0 --full           # Full test with all sizes
     $0 --size dvd       # Test only DVD size
     $0 --verbose --full # Full test with verbose output
@@ -233,6 +238,10 @@ parse_args() {
                 ;;
             -f|--full)
                 TEST_SIZES=("${FULL_TEST_SIZES[@]}")
+                shift
+                ;;
+            -m|--medium)
+                TEST_SIZES=("${MEDIUM_TEST_SIZES[@]}")
                 shift
                 ;;
             -q|--quick)
