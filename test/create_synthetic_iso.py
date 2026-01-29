@@ -129,10 +129,27 @@ def create_synthetic_iso(filename, size_bytes, sparse=True):
         remaining = actual_size - written
         
         if sparse and remaining > 0:
-            # Create sparse file by seeking to the end
-            # This doesn't actually write the data, just extends the file
-            f.seek(actual_size - 1)
-            f.write(b'\x00')
+            # For sparse files, write periodically to maintain structure
+            # but mostly seek to create holes (saves disk space)
+            if size_bytes < 100 * 1024 * 1024:  # Files < 100MB: write all zeros
+                f.write(b'\x00' * remaining)
+            else:
+                # For large files: write zeros every ~10MB to maintain structure
+                chunk_size = 10 * 1024 * 1024  # 10 MB
+                position = f.tell()
+                while remaining > 0:
+                    # Write a small chunk
+                    to_write = min(4096, remaining)  # Write 4KB
+                    f.write(b'\x00' * to_write)
+                    remaining -= to_write
+                    position += to_write
+                    
+                    if remaining > chunk_size:
+                        # Seek forward (creates hole)
+                        to_skip = min(chunk_size, remaining)
+                        f.seek(position + to_skip)
+                        remaining -= to_skip
+                        position += to_skip
         else:
             # Write actual zeros (for testing or non-sparse filesystems)
             chunk_size = 1024 * 1024  # 1 MB chunks

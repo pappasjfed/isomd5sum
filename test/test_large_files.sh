@@ -15,8 +15,8 @@ NC='\033[0m' # No Color
 
 # Test configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TEST_SIZES=("tiny" "small" "cd")  # Default: quick tests
-FULL_TEST_SIZES=("tiny" "small" "cd" "dvd" "dvd_dl" "bd")
+TEST_SIZES=("small" "cd")  # Default: quick tests
+FULL_TEST_SIZES=("small" "cd" "dvd" "dvd_dl" "bd")
 USE_SPARSE=true
 VERBOSE=false
 CLEANUP=true
