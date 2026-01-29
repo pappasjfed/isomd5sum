@@ -127,12 +127,14 @@ int processExitStatus(const int rc) {
     }
 
 #ifdef _WIN32
-    /* On Windows, write to both stdout and stderr to ensure visibility */
+    /* On Windows, write to stdout for better PowerShell compatibility */
     printf("\nThe media check is complete, the result is: %s\n", result);
     fflush(stdout);
-#endif
+#else
+    /* On Unix/Linux, write to stderr (standard behavior) */
     fprintf(stderr, "\nThe media check is complete, the result is: %s\n", result);
     fflush(stderr);
+#endif
 
     return exit_rc;
 }
