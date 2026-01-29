@@ -50,12 +50,13 @@ static unsigned char *read_primary_volume_descriptor(const int fd, off_t *const 
     /* Read n volume descriptors. */
     for (;;) {
         if (read(fd, sector_buffer, SECTOR_SIZE) == -1) {
-            free(sector_buffer);
+            aligned_free(sector_buffer);
             return NULL;
         }
         if (sector_buffer[0] == PRIMARY) {
             break;
         } else if (sector_buffer[0] == SET_TERMINATOR) {
+            aligned_free(sector_buffer);
             return NULL;
         }
         nbyte *= SECTOR_SIZE;
