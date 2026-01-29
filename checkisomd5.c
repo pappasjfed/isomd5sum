@@ -126,6 +126,11 @@ int processExitStatus(const int rc) {
             break;
     }
 
+#ifdef _WIN32
+    /* On Windows, write to both stdout and stderr to ensure visibility */
+    printf("\nThe media check is complete, the result is: %s\n", result);
+    fflush(stdout);
+#endif
     fprintf(stderr, "\nThe media check is complete, the result is: %s\n", result);
     fflush(stderr);
 
