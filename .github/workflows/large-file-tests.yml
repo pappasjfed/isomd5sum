@@ -72,8 +72,7 @@ jobs:
         shell: bash
         run: |
           cd test
-          export PATH="../build/Release:$PATH"
-          ./test_cross_platform.sh --create --medium --verbose
+          ./test_cross_platform.sh --create --medium --verbose --tools-dir ../build/Release
       
       - name: Upload Windows test ISOs
         uses: actions/upload-artifact@v4
