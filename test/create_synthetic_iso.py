@@ -106,6 +106,12 @@ def create_synthetic_iso(filename, size_bytes, sparse=True):
     size_in_sectors = (size_bytes + SECTOR_SIZE - 1) // SECTOR_SIZE
     actual_size = size_in_sectors * SECTOR_SIZE
     
+    # Detect if running on Windows - disable sparse files
+    # Windows sparse file I/O has issues with large files for validation
+    import platform
+    # Sparse files now work correctly on all platforms (after off_t → int64_t fixes)
+    # Removed Windows-specific code that was forcing dense files
+    
     print(f"Creating {filename}...")
     print(f"  Requested size: {size_bytes:,} bytes ({size_bytes / (1024**3):.2f} GB)")
     print(f"  Actual size: {actual_size:,} bytes ({size_in_sectors:,} sectors)")
@@ -203,10 +209,10 @@ def main():
     
     try:
         actual_size = create_synthetic_iso(output_file, size_bytes, sparse)
-        print(f"\n✅ Successfully created {output_file}")
+        print(f"\n[OK] Successfully created {output_file}")
         return 0
     except Exception as e:
-        print(f"\n❌ Error creating ISO: {e}")
+        print(f"\n[ERROR] Error creating ISO: {e}")
         import traceback
         traceback.print_exc()
         return 1

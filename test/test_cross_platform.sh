@@ -15,7 +15,15 @@ NC='\033[0m'
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PLATFORM=$(uname -s)
+
+# Detect platform and normalize name for consistent ISO naming
+case "$(uname -s)" in
+    Linux*)              PLATFORM="Linux" ;;
+    MINGW*|MSYS*|CYGWIN*) PLATFORM="Windows" ;;
+    Darwin*)             PLATFORM="macOS" ;;
+    *)                   PLATFORM=$(uname -s) ;;
+esac
+
 CROSS_PLATFORM_DIR="${SCRIPT_DIR}/cross_platform"
 VERBOSE=false
 
@@ -34,6 +42,7 @@ CHECK_TOOL=""
 TESTS_RUN=0
 TESTS_PASSED=0
 TESTS_FAILED=0
+VALIDATION_FAILED=0  # Track validation failures during creation
 
 # Logging
 log_info() {
@@ -156,7 +165,8 @@ create_test_isos() {
         
         # Verify on same platform
         log_info "Verifying on $PLATFORM..."
-        if "$CHECK_TOOL" "$iso_file" > /dev/null 2>&1; then
+        # Capture verification output, especially debug info on failure
+        if "$CHECK_TOOL" "$iso_file" 2>&1; then
             log_success "✅ $size: Created and verified on $PLATFORM"
             
             # Record in manifest
@@ -164,6 +174,7 @@ create_test_isos() {
             echo "$size|$md5sum|$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$manifest"
         else
             log_error "❌ $size: Failed verification on $PLATFORM"
+            VALIDATION_FAILED=1
         fi
     done
     
@@ -336,7 +347,20 @@ main() {
         fi
     fi
     
+    # Check for validation failures in create mode
+    if [ "$mode" = "create" ] && [ $VALIDATION_FAILED -eq 1 ]; then
+        echo ""
+        log_error "=========================================="
+        log_error "ISO Creation Failed"
+        log_error "=========================================="
+        log_error "One or more ISOs failed validation after creation"
+        log_error "Please check the output above for details"
+        echo ""
+        return 1
+    fi
+    
     return 0
 }
 
 main "$@"
+exit $?
