@@ -78,7 +78,7 @@ git push origin feature/my-feature
 - `checksums.txt` with SHA256 hashes
 - Build information (commit SHA, timestamp)
 - Warning about development build status
-- Packages published to GitHub Packages
+- All artifacts available via GitHub Releases
 
 ### Beta from Develop Branch (Legacy)
 
@@ -115,7 +115,7 @@ git push origin develop
 The workflow runs on:
 
 1. **Push to master** - Builds and tests, no release
-2. **Push to dev** - Builds, tests, creates pre-release, and publishes to GitHub Packages
+2. **Push to dev** - Builds, tests, and creates pre-release with x64 zip artifacts
 3. **Pull requests to dev** - Builds and tests only (no release)
 4. **Push to develop** - Builds, tests, and creates Windows-only pre-release (legacy)
 5. **Version tag (v*)** - Builds, tests, and creates stable release
