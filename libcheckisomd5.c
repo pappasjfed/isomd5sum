@@ -41,6 +41,17 @@
 static void clear_appdata(unsigned char *const buffer, const size_t size, const int64_t appdata_offset, const int64_t offset) {
     static const int64_t buffer_start = 0;
     const int64_t difference = appdata_offset - offset;
+#ifdef _WIN32
+    /* Debug: Show if we're attempting to clear appdata */
+    static int clear_count = 0;
+    if (-APPDATA_SIZE <= difference && difference <= (int64_t) size) {
+        clear_count++;
+        if (clear_count <= 5) {  /* Only log first few times */
+            fprintf(stderr, "DEBUG: clear_appdata #%d: offset=%lld, appdata_offset=%lld, difference=%lld, size=%zu\n",
+                    clear_count, (long long)offset, (long long)appdata_offset, (long long)difference, size);
+        }
+    }
+#endif
     if (-APPDATA_SIZE <= difference && difference <= (int64_t) size) {
         const size_t clear_start = (size_t) MAX(buffer_start, difference);
         const size_t clear_len = MIN(size, (size_t)(difference + APPDATA_SIZE)) - clear_start;
