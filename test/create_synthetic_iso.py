@@ -21,6 +21,7 @@ TEST_SIZES = {
     'dvd': int(4.5 * 1024 * 1024 * 1024),   # 4.5 GB - DVD
     'dvd_dl': int(8.5 * 1024 * 1024 * 1024), # 8.5 GB - DVD Dual Layer
     'bd': 25 * 1024 * 1024 * 1024,  # 25 GB - Blu-ray
+    'bd20': 20 * 1024 * 1024 * 1024, # 20 GB - Testing large files
 }
 
 
