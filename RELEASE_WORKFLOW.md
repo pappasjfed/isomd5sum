@@ -4,10 +4,11 @@ This document explains how the automated release system works for the isomd5sum 
 
 ## Overview
 
-The project has two types of releases:
+The project has three types of releases:
 
 1. **Stable Releases** - Created from version tags
-2. **Pre-releases (Beta)** - Automatically created from develop branch
+2. **Pre-releases (Beta) from develop** - Automatically created from develop branch (Windows only)
+3. **Pre-releases (Beta) from dev** - Automatically created from dev branch via PRs (Linux + Windows, published to GitHub Packages)
 
 ## Stable Releases
 
@@ -31,6 +32,57 @@ git push origin v1.0.0
   - `checksums.txt`
 
 ## Pre-releases (Beta)
+
+### Beta from Dev Branch (Recommended)
+
+The `dev` branch is the primary branch for beta releases and includes both Linux and Windows builds.
+
+#### How to Create
+
+1. Create a pull request targeting the `dev` branch
+2. Once PR is reviewed and merged to `dev`, beta release is automatically created
+
+```bash
+# Create a feature branch
+git checkout -b feature/my-feature dev
+
+# Make changes, commit
+git add .
+git commit -m "Add new feature"
+
+# Push and create PR to dev branch
+git push origin feature/my-feature
+# Create PR on GitHub targeting 'dev' branch
+
+# After PR is merged, beta is automatically released
+```
+
+#### What Happens
+
+- Workflow triggers on PR to `dev` - runs tests only
+- When PR is merged (push to `dev`):
+  - Builds Linux executables (Fedora 39)
+  - Builds Windows executables (MSVC)
+  - Runs all tests
+  - Creates GitHub Pre-release with timestamp-based tag
+  - Publishes packages to GitHub Packages
+  - Marked with ⚠️ pre-release warning
+- Version format: `beta-YYYYMMDD-HHMMSS-{short-commit-sha}`
+  - Example: `beta-20260130-161500-abc1234`
+
+#### Includes
+
+- `isomd5sum-beta-...-linux-x64.tar.gz` - Linux build (tarball)
+- `isomd5sum-beta-...-linux-x64.zip` - Linux build (zip)
+- `isomd5sum-beta-...-windows-x64.zip` - Windows build (zip)
+- `checksums.txt` with SHA256 hashes
+- Build information (commit SHA, timestamp)
+- Warning about development build status
+- Packages published to GitHub Packages
+
+### Beta from Develop Branch (Legacy)
+
+The `develop` branch continues to work for Windows-only pre-releases.
 
 ### How to Create
 
@@ -63,10 +115,12 @@ git push origin develop
 The workflow runs on:
 
 1. **Push to master** - Builds and tests, no release
-2. **Push to develop** - Builds, tests, and creates pre-release
-3. **Version tag (v*)** - Builds, tests, and creates stable release
-4. **Pull requests to master** - Builds and tests only
-5. **Manual dispatch** - Can trigger manually from Actions tab
+2. **Push to dev** - Builds, tests, creates pre-release, and publishes to GitHub Packages
+3. **Pull requests to dev** - Builds and tests only (no release)
+4. **Push to develop** - Builds, tests, and creates Windows-only pre-release (legacy)
+5. **Version tag (v*)** - Builds, tests, and creates stable release
+6. **Pull requests to master** - Builds and tests only
+7. **Manual dispatch** - Can trigger manually from Actions tab
 
 ## Artifact Retention
 

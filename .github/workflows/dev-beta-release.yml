@@ -120,18 +120,20 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           
-          # Create Linux tarball
+          # Create Linux x64 archives (both tarball and zip)
           cd release-linux
           tar -czf ../isomd5sum-${VERSION}-linux-x64.tar.gz .
+          zip -r ../isomd5sum-${VERSION}-linux-x64.zip .
           cd ..
           
-          # Create Windows zip
+          # Create Windows x64 zip
           cd release-windows
           zip -r ../isomd5sum-${VERSION}-windows-x64.zip .
           cd ..
           
           # Calculate checksums
           sha256sum isomd5sum-${VERSION}-linux-x64.tar.gz > checksums.txt
+          sha256sum isomd5sum-${VERSION}-linux-x64.zip >> checksums.txt
           sha256sum isomd5sum-${VERSION}-windows-x64.zip >> checksums.txt
       
       - name: Create Beta Release
@@ -156,8 +158,11 @@ jobs:
             - **Build Date**: ${{ steps.version.outputs.version }}
             
             ### Downloads
-            - **Linux Build** (`isomd5sum-*-linux-x64.tar.gz`): Built on Fedora 39
-            - **Windows Build** (`isomd5sum-*-windows-x64.zip`): Built with Visual Studio 2022
+            - **Linux x64 Build**: 
+              - `isomd5sum-*-linux-x64.tar.gz` - Tarball format (Built on Fedora 39)
+              - `isomd5sum-*-linux-x64.zip` - Zip format (Built on Fedora 39)
+            - **Windows x64 Build**: 
+              - `isomd5sum-*-windows-x64.zip` - Built with Visual Studio 2022
             
             ### What's included
             - `checkisomd5` / `checkisomd5.exe` - Check MD5 checksums embedded in ISO images
