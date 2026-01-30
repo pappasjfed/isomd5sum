@@ -106,6 +106,17 @@ def create_synthetic_iso(filename, size_bytes, sparse=True):
     size_in_sectors = (size_bytes + SECTOR_SIZE - 1) // SECTOR_SIZE
     actual_size = size_in_sectors * SECTOR_SIZE
     
+    # Detect if running on Windows - disable sparse files
+    # Windows sparse file I/O has issues with large files for validation
+    import platform
+    is_windows = (
+        platform.system() == 'Windows' or 
+        'mingw' in platform.system().lower() or
+        'msys' in platform.system().lower()
+    )
+    if is_windows:
+        sparse = False
+    
     print(f"Creating {filename}...")
     print(f"  Requested size: {size_bytes:,} bytes ({size_bytes / (1024**3):.2f} GB)")
     print(f"  Actual size: {actual_size:,} bytes ({size_in_sectors:,} sectors)")
