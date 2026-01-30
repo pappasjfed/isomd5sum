@@ -165,7 +165,8 @@ create_test_isos() {
         
         # Verify on same platform
         log_info "Verifying on $PLATFORM..."
-        if "$CHECK_TOOL" "$iso_file" > /dev/null 2>&1; then
+        # Capture verification output, especially debug info on failure
+        if "$CHECK_TOOL" "$iso_file" 2>&1; then
             log_success "✅ $size: Created and verified on $PLATFORM"
             
             # Record in manifest
