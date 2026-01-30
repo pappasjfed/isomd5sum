@@ -65,8 +65,8 @@ int implantISOFile(const char *iso, int supported, int forceit, int quiet, char 
 
 int implantISOFD(int isofd, int supported, int forceit, int quiet, char **errstr) {
 
-    off_t pvd_offset;
-    const off_t isosize = primary_volume_size(isofd, &pvd_offset);
+    int64_t pvd_offset;
+    const int64_t isosize = primary_volume_size(isofd, &pvd_offset);
     if (isosize == 0) {
         *errstr = "Could not find primary volume!";
         return -1;
@@ -110,10 +110,10 @@ int implantISOFD(int isofd, int supported, int forceit, int quiet, char **errstr
     unsigned char *buffer;
     buffer = aligned_alloc(pagesize, buffer_size * sizeof(*buffer));
 
-    const off_t total_size = isosize - SKIPSECTORS * SECTOR_SIZE;
-    const off_t fragment_size = total_size / (FRAGMENT_COUNT + 1);
+    const int64_t total_size = isosize - SKIPSECTORS * SECTOR_SIZE;
+    const int64_t fragment_size = total_size / (FRAGMENT_COUNT + 1);
     size_t previous_fragment = 0UL;
-    off_t offset = 0LL;
+    int64_t offset = 0LL;
     while (offset < total_size) {
         const size_t nbyte = MIN((size_t)(total_size - offset), buffer_size);
         ssize_t nread = read(isofd, buffer, nbyte);
