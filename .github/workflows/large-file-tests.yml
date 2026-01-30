@@ -39,6 +39,7 @@ jobs:
           ./test_cross_platform.sh --create --medium --verbose
       
       - name: Upload Linux test ISOs
+        if: always()  # Upload even if verification fails
         uses: actions/upload-artifact@v4
         with:
           name: linux-test-isos
@@ -75,6 +76,7 @@ jobs:
           ./test_cross_platform.sh --create --medium --verbose --tools-dir ../build/Release
       
       - name: Upload Windows test ISOs
+        if: always()  # Upload even if verification fails
         uses: actions/upload-artifact@v4
         with:
           name: windows-test-isos
