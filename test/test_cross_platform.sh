@@ -42,6 +42,7 @@ CHECK_TOOL=""
 TESTS_RUN=0
 TESTS_PASSED=0
 TESTS_FAILED=0
+VALIDATION_FAILED=0  # Track validation failures during creation
 
 # Logging
 log_info() {
@@ -172,6 +173,7 @@ create_test_isos() {
             echo "$size|$md5sum|$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$manifest"
         else
             log_error "❌ $size: Failed verification on $PLATFORM"
+            VALIDATION_FAILED=1
         fi
     done
     
@@ -342,6 +344,18 @@ main() {
             log_error "💔 Some cross-platform tests failed"
             return 1
         fi
+    fi
+    
+    # Check for validation failures in create mode
+    if [ "$mode" = "create" ] && [ $VALIDATION_FAILED -eq 1 ]; then
+        echo ""
+        log_error "=========================================="
+        log_error "ISO Creation Failed"
+        log_error "=========================================="
+        log_error "One or more ISOs failed validation after creation"
+        log_error "Please check the output above for details"
+        echo ""
+        return 1
     fi
     
     return 0
