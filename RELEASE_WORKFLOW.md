@@ -8,7 +8,7 @@ The project has three types of releases:
 
 1. **Stable Releases** - Created from version tags
 2. **Pre-releases (Beta) from develop** - Automatically created from develop branch (Windows only)
-3. **Pre-releases (Beta) from dev** - Automatically created from dev branch via PRs (Linux + Windows, published to GitHub Packages)
+3. **Pre-releases (Beta) from dev** - Automatically created from dev branch via PRs (Linux + Windows x64 builds published to GitHub Releases)
 
 ## Stable Releases
 
@@ -61,11 +61,11 @@ git push origin feature/my-feature
 
 - Workflow triggers on PR to `dev` - runs tests only
 - When PR is merged (push to `dev`):
-  - Builds Linux executables (Fedora 39)
-  - Builds Windows executables (MSVC)
+  - Builds Linux x64 executables (Fedora 39)
+  - Builds Windows x64 executables (MSVC)
   - Runs all tests
   - Creates GitHub Pre-release with timestamp-based tag
-  - Publishes packages to GitHub Packages
+  - Publishes x64 zip artifacts to GitHub Releases
   - Marked with ⚠️ pre-release warning
 - Version format: `beta-YYYYMMDD-HHMMSS-{short-commit-sha}`
   - Example: `beta-20260130-161500-abc1234`
