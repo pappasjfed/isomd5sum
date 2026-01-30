@@ -31,8 +31,8 @@ VERBOSE=false
 TEST_SIZES=("small" "cd")  # Default
 QUICK_SIZES=("small" "cd")
 MEDIUM_SIZES=("small" "cd" "dvd")
-LARGE_SIZES=("small" "cd" "dvd" "bd20")
-FULL_SIZES=("small" "cd" "dvd" "dvd_dl" "bd20" "bd")
+LARGE_SIZES=("small" "cd" "dvd" "bd")
+FULL_SIZES=("small" "cd" "dvd" "dvd_dl" "bd")
 
 # Tools
 IMPLANT_TOOL=""
