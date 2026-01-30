@@ -32,7 +32,7 @@
 
 #include "utilities.h"
 
-static unsigned char *read_primary_volume_descriptor(const int fd, off_t *const offset) {
+static unsigned char *read_primary_volume_descriptor(const int fd, int64_t *const offset) {
     /*
      * According to ECMA-119 8.1.1.
      */
@@ -41,7 +41,7 @@ static unsigned char *read_primary_volume_descriptor(const int fd, off_t *const 
            ADDITIONAL = 2,
            PARTITION = 3,
            SET_TERMINATOR = 255 };
-    off_t nbyte = SYSTEM_AREA_SIZE;
+    int64_t nbyte = SYSTEM_AREA_SIZE;
     /* Skip unused system area. */
     if (lseek(fd, nbyte, SEEK_SET) == -1) {
         return NULL;
@@ -132,11 +132,11 @@ static size_t matches_number(char *const buffer, size_t index,
     return 0UL;
 }
 
-off_t primary_volume_size(const int isofd, off_t *const offset) {
+int64_t primary_volume_size(const int isofd, int64_t *const offset) {
     unsigned char *buffer = read_primary_volume_descriptor(isofd, offset);
     if (buffer == NULL)
         return 0;
-    off_t tmp = isosize(buffer);
+    int64_t tmp = isosize(buffer);
     aligned_free(buffer);
     return tmp;
 }
@@ -144,7 +144,7 @@ off_t primary_volume_size(const int isofd, off_t *const offset) {
 /* Find the primary volume descriptor and return parsed information from it. */
 struct volume_info *const parsepvd(const int isofd) {
     char buffer[APPDATA_SIZE];
-    off_t offset;
+    int64_t offset;
 
     enum task_status {
         TASK_SUPPORTED = 1,

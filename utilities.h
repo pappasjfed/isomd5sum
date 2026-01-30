@@ -72,7 +72,7 @@ struct volume_info {
     int64_t skipsectors;  /* Use int64_t instead of off_t for Windows compatibility */
 };
 
-off_t primary_volume_size(const int isofd, off_t *const offset);
+int64_t primary_volume_size(const int isofd, int64_t *const offset);
 
 struct volume_info *const parsepvd(const int isofd);
 
