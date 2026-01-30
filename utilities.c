@@ -73,12 +73,6 @@ static int64_t isosize(const unsigned char *const buffer) {
      * endianness of the system.
      * CRITICAL: Must use explicit 64-bit arithmetic to avoid overflow on Windows!
      */
-#ifdef _WIN32
-    /* Debug: Print the bytes being read for isosize */
-            SIZE_OFFSET, buffer[SIZE_OFFSET], buffer[SIZE_OFFSET+1],
-            buffer[SIZE_OFFSET+2], buffer[SIZE_OFFSET+3]);
-            sizeof(off_t), sizeof(int64_t));
-#endif
     
     /* Use explicit int64_t to ensure 64-bit arithmetic on all platforms */
     int64_t result = 0;
@@ -87,16 +81,8 @@ static int64_t isosize(const unsigned char *const buffer) {
     result += ((int64_t)buffer[SIZE_OFFSET + 2]) << 8;   /* byte 2 * 2^8 */
     result += ((int64_t)buffer[SIZE_OFFSET + 3]);        /* byte 3 */
     
-#ifdef _WIN32
-            (long long)result, (long long)result);
-#endif
-    
     /* Multiply by sector size to get bytes */
     result *= SECTOR_SIZE;
-    
-#ifdef _WIN32
-            (long long)result, (long long)(result / SECTOR_SIZE));
-#endif
     
     return result;  /* Return int64_t directly, no truncation! */
 }
@@ -241,15 +227,6 @@ bool validate_fragment(const MD5_CTX *const hashctx, const size_t fragment,
     MD5_Final(digest, &ctx);
     size_t j = (fragment - 1) * fragmentsize;
     
-#ifdef _WIN32
-    /* Debug fragment validation details */
-            fragment, fragmentsize, j);
-            digest[0], digest[1], digest[2]);
-    if (fragmentsums != NULL) {
-                fragmentsums[j], fragmentsums[j+1], fragmentsums[j+2]);
-    }
-#endif
-    
     for (size_t i = 0; i < MIN(fragmentsize, HASH_SIZE / 2); i++) {
         char tmp[3];
         /*
@@ -259,9 +236,6 @@ bool validate_fragment(const MD5_CTX *const hashctx, const size_t fragment,
         if (hashsums != NULL)
             strncat(hashsums, tmp, 1);
         if (fragmentsums != NULL && tmp[0] != fragmentsums[j++]) {
-#ifdef _WIN32
-                    i, tmp[0], digest[i], fragmentsums[j-1]);
-#endif
             return false;
         }
     }
