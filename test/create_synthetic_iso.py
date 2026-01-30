@@ -109,13 +109,8 @@ def create_synthetic_iso(filename, size_bytes, sparse=True):
     # Detect if running on Windows - disable sparse files
     # Windows sparse file I/O has issues with large files for validation
     import platform
-    is_windows = (
-        platform.system() == 'Windows' or 
-        'mingw' in platform.system().lower() or
-        'msys' in platform.system().lower()
-    )
-    if is_windows:
-        sparse = False
+    # Sparse files now work correctly on all platforms (after off_t → int64_t fixes)
+    # Removed Windows-specific code that was forcing dense files
     
     print(f"Creating {filename}...")
     print(f"  Requested size: {size_bytes:,} bytes ({size_bytes / (1024**3):.2f} GB)")
