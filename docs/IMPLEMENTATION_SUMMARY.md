@@ -56,8 +56,8 @@ Port the isomd5sum tools (checkisomd5 and implantisomd5) to Windows, enabling us
 ### 5. Comprehensive Documentation ✅
 
 **User Documentation:**
-- `WINDOWS_BUILD.md` - Complete build instructions for Windows
-- `WINDOWS_QUICKSTART.md` - End-user quick start guide
+- `docs/WINDOWS_BUILD.md` - Complete build instructions for Windows
+- `docs/WINDOWS_QUICKSTART.md` - End-user quick start guide
 - `README` - Updated with cross-platform information
 
 **Developer Documentation:**
@@ -204,8 +204,8 @@ Port the isomd5sum tools (checkisomd5 and implantisomd5) to Windows, enabling us
 - `CMakeLists.txt` - Cross-platform build system
 - `win32_compat.h` - Windows compatibility layer
 - `simple_popt.h` - Command-line parser for Windows
-- `WINDOWS_BUILD.md` - Build documentation
-- `WINDOWS_QUICKSTART.md` - User guide
+- `docs/WINDOWS_BUILD.md` - Build documentation
+- `docs/WINDOWS_QUICKSTART.md` - User guide
 - `cmake/mingw-w64.cmake` - Cross-compilation toolchain
 - `.github/workflows/windows-build.yml` - Windows CI/CD
 - `.github/workflows/test.yml` - Enhanced testing
