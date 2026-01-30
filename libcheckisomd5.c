@@ -38,10 +38,10 @@
 #include "libcheckisomd5.h"
 #include "utilities.h"
 
-static void clear_appdata(unsigned char *const buffer, const size_t size, const off_t appdata_offset, const off_t offset) {
-    static const ssize_t buffer_start = 0;
-    const ssize_t difference = appdata_offset - offset;
-    if (-APPDATA_SIZE <= difference && difference <= (ssize_t) size) {
+static void clear_appdata(unsigned char *const buffer, const size_t size, const int64_t appdata_offset, const int64_t offset) {
+    static const int64_t buffer_start = 0;
+    const int64_t difference = appdata_offset - offset;
+    if (-APPDATA_SIZE <= difference && difference <= (int64_t) size) {
         const size_t clear_start = (size_t) MAX(buffer_start, difference);
         const size_t clear_len = MIN(size, (size_t)(difference + APPDATA_SIZE)) - clear_start;
         memset(buffer + clear_start, ' ', clear_len);
@@ -53,8 +53,8 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
     if (info == NULL)
         return ISOMD5SUM_CHECK_NOT_FOUND;
 
-    const off_t total_size = info->isosize - info->skipsectors * SECTOR_SIZE;
-    const off_t fragment_size = total_size / (info->fragmentcount + 1);
+    const int64_t total_size = info->isosize - info->skipsectors * SECTOR_SIZE;
+    const int64_t fragment_size = total_size / (info->fragmentcount + 1);
     if (cb)
         cb(cbdata, 0LL, (long long) total_size);
 
@@ -69,14 +69,17 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
     buffer = aligned_alloc((size_t) getpagesize(), buffer_size * sizeof(*buffer));
 
     size_t previous_fragment = 0UL;
-    off_t offset = 0LL;
+    int64_t offset = 0LL;
+    
     while (offset < total_size) {
         const size_t nbyte = MIN((size_t)(total_size - offset), buffer_size);
 
         ssize_t nread = read(isofd, buffer, nbyte);
-        if (nread <= 0L)
+        
+        if (nread <= 0L) {
             break;
-
+        }
+        
         /**
          * Originally was added in 2005 because the kernel was returning the
          * size from where it started up to the end of the block it pre-fetched
@@ -89,7 +92,7 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
         /* Make sure appdata which contains the md5sum is cleared. */
         clear_appdata(buffer, nread, info->offset + APPDATA_OFFSET, offset);
 
-        MD5_Update(&hashctx, buffer, (unsigned int) nread);
+        MD5_Update(&hashctx, buffer, (size_t) nread);
         if (info->fragmentcount) {
             const size_t current_fragment = offset / fragment_size;
             const size_t fragmentsize = FRAGMENT_SUM_SIZE / info->fragmentcount;
@@ -157,6 +160,7 @@ int printMD5SUM(const char *file) {
         printf("Fragment count: %zu\n", info->fragmentcount);
         printf("Supported ISO: %s\n", info->supported ? "yes" : "no");
     }
+    fflush(stdout);
     free(info);
     return 0;
 }

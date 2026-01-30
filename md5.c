@@ -85,13 +85,16 @@ void MD5_Init(struct MD5Context *ctx)
 void MD5_Update(struct MD5Context *ctx, unsigned const char *buf, unsigned len)
 {
         uint32 t;
+        uint32 len_bits;
 
         /* Update bitcount */
-
+        
         t = ctx->bits[0];
-        if ((ctx->bits[0] = t + ((uint32) len << 3)) < t)
+        len_bits = len << 3;  /* Convert bytes to bits */
+        ctx->bits[0] = t + len_bits;
+        if (ctx->bits[0] < t)  /* Check for overflow/carry */
                 ctx->bits[1]++; /* Carry from low to high */
-        ctx->bits[1] += len >> 29;
+        ctx->bits[1] += len >> 29;  /* Add upper bits */
 
         t = (t >> 3) & 0x3f;    /* Bytes already in shsInfo->data */
 

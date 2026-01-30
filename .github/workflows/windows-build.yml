@@ -2,7 +2,7 @@ name: Windows Build and Release
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, develop ]
     tags:
       - 'v*'
   pull_request:
@@ -64,6 +64,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          lfs: true
+      
+      - name: Checkout test assets from develop branch
+        run: |
+          git fetch origin develop
+          git checkout origin/develop -- test/
+          Write-Host "✓ Test assets retrieved"
       
       - name: Download artifacts
         uses: actions/download-artifact@v4.1.3
@@ -80,86 +88,87 @@ jobs:
       - name: Test help output
         run: |
           cd bin
-          .\checkisomd5.exe --help 2>&1 | Out-Null
-          if ($LASTEXITCODE -ne 1) { Write-Host "Note: checkisomd5 --help returned $LASTEXITCODE" }
-          .\implantisomd5.exe --help 2>&1 | Out-Null
-          if ($LASTEXITCODE -ne 1) { Write-Host "Note: implantisomd5 --help returned $LASTEXITCODE" }
-          Write-Host "✓ Executables can run"
+          # Note: --help returns exit code 1, which is fine
+          $output = .\checkisomd5.exe --help 2>&1 | Out-String
+          Write-Host "checkisomd5 --help output:"
+          Write-Host $output
+          Write-Host "Exit code: $LASTEXITCODE"
+          Write-Host "✓ checkisomd5 can run"
+          
+          $output = .\implantisomd5.exe --help 2>&1 | Out-String
+          Write-Host "implantisomd5 --help output:"
+          Write-Host $output
+          Write-Host "Exit code: $LASTEXITCODE"
+          Write-Host "✓ implantisomd5 can run"
+          
+          # Reset exit code for next steps
           exit 0
       
-      - name: Create test ISO
+      - name: Test with known good ISO (md5sumonly)
         run: |
-          # Create a simple test directory
-          New-Item -ItemType Directory -Path testdata -Force
-          "Hello from Windows build test" | Out-File -FilePath testdata\test.txt
-          
-          # Download and install mkisofs (part of cdrtools)
-          Write-Host "Creating a minimal test ISO..."
-          # For testing, we'll create a minimal ISO structure manually
-          $isoSize = 1MB
-          $testIso = New-Object byte[] $isoSize
-          # Write minimal ISO header (simplified)
-          for ($i = 0; $i -lt 32768; $i++) { $testIso[$i] = 0 }
-          # System area
-          for ($i = 0; $i -lt 16; $i++) {
-              for ($j = 0; $j -lt 2048; $j++) {
-                  $testIso[$i * 2048 + $j] = 0
-              }
-          }
-          # Primary Volume Descriptor at sector 16
-          $pvdOffset = 16 * 2048
-          $testIso[$pvdOffset] = 1  # Type: Primary Volume Descriptor
-          # CD001 identifier
-          $testIso[$pvdOffset + 1] = [byte][char]'C'
-          $testIso[$pvdOffset + 2] = [byte][char]'D'
-          $testIso[$pvdOffset + 3] = [byte][char]'0'
-          $testIso[$pvdOffset + 4] = [byte][char]'0'
-          $testIso[$pvdOffset + 5] = [byte][char]'1'
-          $testIso[$pvdOffset + 6] = 1  # Version
-          
-          # Volume space size at offset 80 (big-endian at 84)
-          $sectorCount = $isoSize / 2048
-          $testIso[$pvdOffset + 84] = [byte](($sectorCount -shr 24) -band 0xFF)
-          $testIso[$pvdOffset + 85] = [byte](($sectorCount -shr 16) -band 0xFF)
-          $testIso[$pvdOffset + 86] = [byte](($sectorCount -shr 8) -band 0xFF)
-          $testIso[$pvdOffset + 87] = [byte]($sectorCount -band 0xFF)
-          
-          # Application data area at offset 883 (all spaces)
-          for ($i = 0; $i -lt 512; $i++) {
-              $testIso[$pvdOffset + 883 + $i] = [byte][char]' '
-          }
-          
-          # Volume Set Terminator at sector 17
-          $testIso[17 * 2048] = 255
-          
-          [System.IO.File]::WriteAllBytes("test.iso", $testIso)
-          Write-Host "✓ Test ISO created"
-      
-      - name: Test ISO operations
-        run: |
-          cd bin
-          
-          # Test implanting checksum
-          Write-Host "Testing implantisomd5..."
-          .\implantisomd5.exe ..\test.iso
-          if ($LASTEXITCODE -ne 0) { 
-              Write-Host "✗ Failed to implant checksum"
-              exit 1 
-          }
-          Write-Host "✓ Checksum implanted successfully"
-          
-          # Test checking checksum (with --md5sumonly to avoid interactive mode)
-          Write-Host "Testing checkisomd5..."
-          .\checkisomd5.exe --md5sumonly ..\test.iso
-          if ($LASTEXITCODE -ne 0) {
-              Write-Host "Note: Checksum verification returned exit code $LASTEXITCODE"
-              Write-Host "This is expected for minimal test ISOs"
-          }
-          Write-Host "✓ Checksum verification executed"
-          
+          Write-Host "Testing checkisomd5 --md5sumonly with test.iso..."
+          Write-Host "Expected MD5: a55e6ed72193ac49c96fa22599abe142"
           Write-Host ""
-          Write-Host "All tests passed! ✓"
-          exit 0
+          
+          $output = .\bin\checkisomd5.exe --md5sumonly .\test\test.iso 2>&1 | Out-String
+          Write-Host "Output received:"
+          Write-Host $output
+          Write-Host "Exit code: $LASTEXITCODE"
+          
+          if ($output -match "a55e6ed72193ac49c96fa22599abe142") {
+              Write-Host "✓ MD5 checksum displayed correctly"
+          } else {
+              Write-Host "✗ MD5 checksum NOT found in output"
+              Write-Host "This indicates the output is not being captured or displayed"
+              exit 1
+          }
+      
+      - name: Test with known good ISO (full check with verbose)
+        run: |
+          Write-Host "Testing checkisomd5 --verbose with test.iso..."
+          Write-Host ""
+          
+          # Use Start-Process to capture all output properly
+          $output = & .\bin\checkisomd5.exe --verbose .\test\test.iso 2>&1 | Out-String
+          Write-Host "Output received:"
+          Write-Host $output
+          Write-Host "Exit code: $LASTEXITCODE"
+          
+          if ($output -match "PASS|FAIL|complete") {
+              Write-Host "✓ Media check result displayed"
+          } else {
+              Write-Host "✗ Media check result NOT found in output"
+              Write-Host "This is the bug we need to fix!"
+              exit 1
+          }
+      
+      - name: Test full check (non-verbose)
+        run: |
+          Write-Host "Testing checkisomd5 (normal mode) with test.iso..."
+          Write-Host ""
+          
+          $output = & .\bin\checkisomd5.exe .\test\test.iso 2>&1 | Out-String
+          Write-Host "Output received:"
+          Write-Host $output
+          Write-Host "Exit code: $LASTEXITCODE"
+          
+          if ($output -match "PASS|FAIL|complete") {
+              Write-Host "✓ Media check result displayed in normal mode"
+          } else {
+              Write-Host "✗ Media check result NOT found in output in normal mode"
+              Write-Host "This confirms the Windows output bug"
+              exit 1
+          }
+      
+      - name: Summary
+        if: always()
+        run: |
+          Write-Host ""
+          Write-Host "=========================================="
+          Write-Host "Test Summary"
+          Write-Host "=========================================="
+          Write-Host "If tests failed, the Windows output bug is confirmed"
+          Write-Host "The program runs but doesn't display final results"
   
   build-mingw:
     name: Build with MinGW (Cross-compile)
@@ -274,5 +283,100 @@ jobs:
             See `checksums.txt` for SHA256 checksums of the release files.
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+  create-prerelease:
+    name: Create Pre-release (Develop Branch)
+    runs-on: ubuntu-latest
+    needs: [build-windows, test-windows, build-mingw]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    permissions:
+      contents: write  # Needed to create releases
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download MSVC artifacts
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: isomd5sum-windows-x64
+          path: ./release-msvc
+      
+      - name: Download MinGW artifacts
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: isomd5sum-windows-x64-mingw
+          path: ./release-mingw
+      
+      - name: Generate version info
+        id: version
+        run: |
+          # Generate beta version with timestamp
+          TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          VERSION="beta-${TIMESTAMP}-${SHORT_SHA}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Generated version: ${VERSION}"
+      
+      - name: Create release archives
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Create MSVC zip
+          cd release-msvc
+          zip -r ../isomd5sum-${VERSION}-windows-x64-msvc.zip .
+          cd ..
+          
+          # Create MinGW zip
+          cd release-mingw
+          zip -r ../isomd5sum-${VERSION}-windows-x64-mingw.zip .
+          cd ..
+          
+          # Calculate checksums
+          sha256sum isomd5sum-${VERSION}-windows-x64-msvc.zip > checksums.txt
+          sha256sum isomd5sum-${VERSION}-windows-x64-mingw.zip >> checksums.txt
+      
+      - name: Create Pre-release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: "Pre-release ${{ steps.version.outputs.version }}"
+          files: |
+            isomd5sum-*.zip
+            checksums.txt
+          body: |
+            ## ⚠️ Pre-release / Beta Build
+            
+            This is an **automated pre-release** from the `develop` branch.
+            
+            **⚠️ Warning**: This is a development build and may be unstable. Use at your own risk!
+            
+            ### Build Information
+            - **Branch**: develop
+            - **Commit**: ${{ github.sha }}
+            - **Build Date**: ${{ steps.version.outputs.version }}
+            
+            ### Downloads
+            - **MSVC Build** (`isomd5sum-*-windows-x64-msvc.zip`): Built with Visual Studio 2022
+            - **MinGW Build** (`isomd5sum-*-windows-x64-mingw.zip`): Built with MinGW-w64
+            
+            ### What's included
+            - `checkisomd5.exe` - Check MD5 checksums embedded in ISO images
+            - `implantisomd5.exe` - Implant MD5 checksums into ISO images
+            - Documentation files
+            
+            ### Usage
+            See `WINDOWS_BUILD.txt` included in the archive for detailed usage instructions.
+            
+            ### Checksums
+            See `checksums.txt` for SHA256 checksums of the release files.
+            
+            ---
+            
+            For stable releases, see releases tagged with version numbers (e.g., v1.0.0).
+          draft: false
+          prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #ifdef _WIN32
 #include "win32_compat.h"
@@ -31,7 +32,7 @@
 
 #include "utilities.h"
 
-static unsigned char *read_primary_volume_descriptor(const int fd, off_t *const offset) {
+static unsigned char *read_primary_volume_descriptor(const int fd, int64_t *const offset) {
     /*
      * According to ECMA-119 8.1.1.
      */
@@ -40,7 +41,7 @@ static unsigned char *read_primary_volume_descriptor(const int fd, off_t *const 
            ADDITIONAL = 2,
            PARTITION = 3,
            SET_TERMINATOR = 255 };
-    off_t nbyte = SYSTEM_AREA_SIZE;
+    int64_t nbyte = SYSTEM_AREA_SIZE;
     /* Skip unused system area. */
     if (lseek(fd, nbyte, SEEK_SET) == -1) {
         return NULL;
@@ -50,12 +51,13 @@ static unsigned char *read_primary_volume_descriptor(const int fd, off_t *const 
     /* Read n volume descriptors. */
     for (;;) {
         if (read(fd, sector_buffer, SECTOR_SIZE) == -1) {
-            free(sector_buffer);
+            aligned_free(sector_buffer);
             return NULL;
         }
         if (sector_buffer[0] == PRIMARY) {
             break;
         } else if (sector_buffer[0] == SET_TERMINATOR) {
+            aligned_free(sector_buffer);
             return NULL;
         }
         nbyte *= SECTOR_SIZE;
@@ -64,17 +66,25 @@ static unsigned char *read_primary_volume_descriptor(const int fd, off_t *const 
     return sector_buffer;
 }
 
-static off_t isosize(const unsigned char *const buffer) {
+static int64_t isosize(const unsigned char *const buffer) {
     /*
      * Doing multiplications so that it can be guaranteed that the big endian
      * number is converted to the systems endianness without knowing the
      * endianness of the system.
+     * CRITICAL: Must use explicit 64-bit arithmetic to avoid overflow on Windows!
      */
-    off_t result = buffer[SIZE_OFFSET] * 0x1000000 +
-                   buffer[SIZE_OFFSET + 1] * 0x10000 +
-                   buffer[SIZE_OFFSET + 2] * 0x100 + buffer[SIZE_OFFSET + 3];
+    
+    /* Use explicit int64_t to ensure 64-bit arithmetic on all platforms */
+    int64_t result = 0;
+    result += ((int64_t)buffer[SIZE_OFFSET]) << 24;      /* byte 0 * 2^24 */
+    result += ((int64_t)buffer[SIZE_OFFSET + 1]) << 16;  /* byte 1 * 2^16 */
+    result += ((int64_t)buffer[SIZE_OFFSET + 2]) << 8;   /* byte 2 * 2^8 */
+    result += ((int64_t)buffer[SIZE_OFFSET + 3]);        /* byte 3 */
+    
+    /* Multiply by sector size to get bytes */
     result *= SECTOR_SIZE;
-    return result;
+    
+    return result;  /* Return int64_t directly, no truncation! */
 }
 
 static size_t starts_with(const char *const buffer, const char *const string) {
@@ -104,11 +114,11 @@ static size_t matches_number(char *const buffer, size_t index,
     return 0UL;
 }
 
-off_t primary_volume_size(const int isofd, off_t *const offset) {
+int64_t primary_volume_size(const int isofd, int64_t *const offset) {
     unsigned char *buffer = read_primary_volume_descriptor(isofd, offset);
     if (buffer == NULL)
         return 0;
-    off_t tmp = isosize(buffer);
+    int64_t tmp = isosize(buffer);
     aligned_free(buffer);
     return tmp;
 }
@@ -116,7 +126,7 @@ off_t primary_volume_size(const int isofd, off_t *const offset) {
 /* Find the primary volume descriptor and return parsed information from it. */
 struct volume_info *const parsepvd(const int isofd) {
     char buffer[APPDATA_SIZE];
-    off_t offset;
+    int64_t offset;
 
     enum task_status {
         TASK_SUPPORTED = 1,
@@ -142,7 +152,7 @@ struct volume_info *const parsepvd(const int isofd) {
     result->offset = offset;
     result->isosize = isosize(aligned_buffer);
 
-    free(aligned_buffer);
+    aligned_free(aligned_buffer);
 
     for (size_t index = 0; index < APPDATA_SIZE;) {
         size_t len;
@@ -216,6 +226,7 @@ bool validate_fragment(const MD5_CTX *const hashctx, const size_t fragment,
     memcpy(&ctx, hashctx, sizeof(ctx));
     MD5_Final(digest, &ctx);
     size_t j = (fragment - 1) * fragmentsize;
+    
     for (size_t i = 0; i < MIN(fragmentsize, HASH_SIZE / 2); i++) {
         char tmp[3];
         /*
@@ -224,8 +235,9 @@ bool validate_fragment(const MD5_CTX *const hashctx, const size_t fragment,
         snprintf(tmp, 3, "%01x", digest[i]);
         if (hashsums != NULL)
             strncat(hashsums, tmp, 1);
-        if (fragmentsums != NULL && tmp[0] != fragmentsums[j++])
+        if (fragmentsums != NULL && tmp[0] != fragmentsums[j++]) {
             return false;
+        }
     }
     return true;
 }
