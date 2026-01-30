@@ -9,7 +9,7 @@ isomd5sum now supports Windows in addition to Linux/Unix platforms:
 - Inject MD5 hashes into ISO images created on Windows
 - Build native Windows executables (.exe)
 
-See WINDOWS_BUILD.md for Windows build instructions.
+See docs/WINDOWS_BUILD.md for Windows build instructions.
 
 ## Building
 
@@ -27,7 +27,7 @@ make
 make install
 ```
 
-For Windows builds, see WINDOWS_BUILD.md for detailed instructions.
+For Windows builds, see docs/WINDOWS_BUILD.md for detailed instructions.
 
 isomd5sum is hosted on GitHub. The source can be
 grabbed via git with
