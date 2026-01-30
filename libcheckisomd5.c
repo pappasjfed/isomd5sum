@@ -39,9 +39,9 @@
 #include "utilities.h"
 
 static void clear_appdata(unsigned char *const buffer, const size_t size, const int64_t appdata_offset, const int64_t offset) {
-    static const ssize_t buffer_start = 0;
-    const ssize_t difference = appdata_offset - offset;
-    if (-APPDATA_SIZE <= difference && difference <= (ssize_t) size) {
+    static const int64_t buffer_start = 0;
+    const int64_t difference = appdata_offset - offset;
+    if (-APPDATA_SIZE <= difference && difference <= (int64_t) size) {
         const size_t clear_start = (size_t) MAX(buffer_start, difference);
         const size_t clear_len = MIN(size, (size_t)(difference + APPDATA_SIZE)) - clear_start;
         memset(buffer + clear_start, ' ', clear_len);
