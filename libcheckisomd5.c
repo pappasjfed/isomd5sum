@@ -142,8 +142,12 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
             /* If we're onto the next fragment, calculate the previous sum and check. */
             if (current_fragment != previous_fragment) {
 #ifdef _WIN32
-                fprintf(stderr, "DEBUG: Validating fragment %zu at offset %lld\n",
-                        current_fragment, (long long)offset);
+                fprintf(stderr, "DEBUG: Validating fragment %zu at offset %lld (previous_fragment=%zu)\n",
+                        current_fragment, (long long)offset, previous_fragment);
+                fprintf(stderr, "DEBUG:   fragment_size=%lld, fragmentcount=%d\n",
+                        (long long)fragment_size, info->fragmentcount);
+                fprintf(stderr, "DEBUG:   Total bytes processed so far: %lld\n",
+                        (long long)offset);
 #endif
                 if (!validate_fragment(&hashctx, current_fragment, fragmentsize,
                                        info->fragmentsums, NULL)) {
