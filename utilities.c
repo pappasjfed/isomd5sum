@@ -75,10 +75,8 @@ static int64_t isosize(const unsigned char *const buffer) {
      */
 #ifdef _WIN32
     /* Debug: Print the bytes being read for isosize */
-    fprintf(stderr, "DEBUG: isosize bytes at offset %d: [%02x %02x %02x %02x]\n",
             SIZE_OFFSET, buffer[SIZE_OFFSET], buffer[SIZE_OFFSET+1],
             buffer[SIZE_OFFSET+2], buffer[SIZE_OFFSET+3]);
-    fprintf(stderr, "DEBUG: sizeof(off_t)=%zu, sizeof(int64_t)=%zu\n", 
             sizeof(off_t), sizeof(int64_t));
 #endif
     
@@ -90,7 +88,6 @@ static int64_t isosize(const unsigned char *const buffer) {
     result += ((int64_t)buffer[SIZE_OFFSET + 3]);        /* byte 3 */
     
 #ifdef _WIN32
-    fprintf(stderr, "DEBUG: After bit operations, sectors=%lld (0x%llx)\n",
             (long long)result, (long long)result);
 #endif
     
@@ -98,7 +95,6 @@ static int64_t isosize(const unsigned char *const buffer) {
     result *= SECTOR_SIZE;
     
 #ifdef _WIN32
-    fprintf(stderr, "DEBUG: isosize calculated: %lld bytes (%lld sectors)\n",
             (long long)result, (long long)(result / SECTOR_SIZE));
 #endif
     
@@ -247,12 +243,9 @@ bool validate_fragment(const MD5_CTX *const hashctx, const size_t fragment,
     
 #ifdef _WIN32
     /* Debug fragment validation details */
-    fprintf(stderr, "DEBUG:   Fragment %zu: fragmentsize=%zu, offset in fragmentsums=%zu\n",
             fragment, fragmentsize, j);
-    fprintf(stderr, "DEBUG:   Calculated fragment MD5 (first 3 bytes): %02x %02x %02x\n",
             digest[0], digest[1], digest[2]);
     if (fragmentsums != NULL) {
-        fprintf(stderr, "DEBUG:   Expected from fragmentsums: [%c%c%c]\n",
                 fragmentsums[j], fragmentsums[j+1], fragmentsums[j+2]);
     }
 #endif
@@ -267,7 +260,6 @@ bool validate_fragment(const MD5_CTX *const hashctx, const size_t fragment,
             strncat(hashsums, tmp, 1);
         if (fragmentsums != NULL && tmp[0] != fragmentsums[j++]) {
 #ifdef _WIN32
-            fprintf(stderr, "DEBUG:   Mismatch at byte %zu: got '%c' (%02x), expected '%c'\n",
                     i, tmp[0], digest[i], fragmentsums[j-1]);
 #endif
             return false;
