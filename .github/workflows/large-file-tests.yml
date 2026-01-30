@@ -2,9 +2,9 @@ name: Large File Tests
 
 on:
   push:
-    branches: [ master, develop, 'copilot/**' ]
+    branches: [ master, develop, dev, 'copilot/**' ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, dev ]
   workflow_dispatch:
 
 permissions:
