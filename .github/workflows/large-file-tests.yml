@@ -196,7 +196,7 @@ jobs:
               
               if ../checkisomd5 "$iso" 2>&1 | grep -q "PASS"; then
                 echo "✅ PASSED: $(basename $iso)"
-                ((count++))
+                count=$((count + 1))
               else
                 echo "❌ FAILED: $(basename $iso)"
                 exit 1
