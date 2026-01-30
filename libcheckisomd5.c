@@ -49,6 +49,11 @@ static void clear_appdata(unsigned char *const buffer, const size_t size, const 
         if (clear_count <= 5) {  /* Only log first few times */
             fprintf(stderr, "DEBUG: clear_appdata #%d: offset=%lld, appdata_offset=%lld, difference=%lld, size=%zu\n",
                     clear_count, (long long)offset, (long long)appdata_offset, (long long)difference, size);
+            const size_t clear_start = (size_t) MAX(buffer_start, difference);
+            const size_t clear_len = MIN(size, (size_t)(difference + APPDATA_SIZE)) - clear_start;
+            fprintf(stderr, "DEBUG:   Clearing buffer[%zu] for %zu bytes (setting to spaces)\n", clear_start, clear_len);
+            fprintf(stderr, "DEBUG:   Before clear, first 4 bytes at clear_start: [%02x %02x %02x %02x]\n",
+                    buffer[clear_start], buffer[clear_start+1], buffer[clear_start+2], buffer[clear_start+3]);
         }
     }
 #endif
@@ -56,6 +61,12 @@ static void clear_appdata(unsigned char *const buffer, const size_t size, const 
         const size_t clear_start = (size_t) MAX(buffer_start, difference);
         const size_t clear_len = MIN(size, (size_t)(difference + APPDATA_SIZE)) - clear_start;
         memset(buffer + clear_start, ' ', clear_len);
+#ifdef _WIN32
+        if (clear_count <= 5) {
+            fprintf(stderr, "DEBUG:   After clear, first 4 bytes at clear_start: [%02x %02x %02x %02x]\n",
+                    buffer[clear_start], buffer[clear_start+1], buffer[clear_start+2], buffer[clear_start+3]);
+        }
+#endif
     }
 }
 
