@@ -144,6 +144,16 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
             lseek(isofd, offset + nread, SEEK_SET);
         }
         /* Make sure appdata which contains the md5sum is cleared. */
+#ifdef _WIN32
+        {
+            static int appdata_debug_count = 0;
+            if (appdata_debug_count < 5) {
+                int64_t calculated_appdata = info->offset + APPDATA_OFFSET;
+                fprintf(stderr, "DEBUG: Calling clear_appdata #%d: info->offset=%lld, APPDATA_OFFSET=%d, calculated=%lld, current_offset=%lld\n",
+                        ++appdata_debug_count, (long long)info->offset, APPDATA_OFFSET, (long long)calculated_appdata, (long long)offset);
+            }
+        }
+#endif
         clear_appdata(buffer, nread, info->offset + APPDATA_OFFSET, offset);
 
         MD5_Update(&hashctx, buffer, (size_t) nread);
