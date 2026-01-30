@@ -70,13 +70,18 @@ int user_bailing_out(void) {
 static int outputCB(void *const co, const long long offset, const long long total) {
     struct progressCBData *const data = co;
     int gaugeval = -1;
+    double pct = (100.0 * (double) offset) / (double) total;
+    
+    /* Cap percentage at 100% to avoid showing >100% due to read overshooting */
+    if (pct > 100.0) pct = 100.0;
 
     if (data->verbose) {
-        printf("\rChecking: %05.1f%%", (100.0 * (double) offset) / (double) total);
+        printf("\rChecking: %05.1f%%", pct);
         fflush(stdout);
     }
     if (data->gauge) {
-        gaugeval = (int) ((100.0 * (double) offset) / (double) total);
+        gaugeval = (int) pct;
+        if (gaugeval > 100) gaugeval = 100;
         if (gaugeval != data->gaugeat) {
             printf("%d\n", gaugeval);
             fflush(stdout);
@@ -126,7 +131,15 @@ int processExitStatus(const int rc) {
             break;
     }
 
+#ifdef _WIN32
+    /* On Windows, write to stdout for better PowerShell compatibility */
+    printf("\nThe media check is complete, the result is: %s\n", result);
+    fflush(stdout);
+#else
+    /* On Unix/Linux, write to stderr (standard behavior) */
     fprintf(stderr, "\nThe media check is complete, the result is: %s\n", result);
+    fflush(stderr);
+#endif
 
     return exit_rc;
 }
@@ -199,8 +212,10 @@ int main(int argc, const char **argv) {
     tcsetattr(0, TCSANOW, &oldt);
 #endif
 
-    if (data.verbose)
+    if (data.verbose) {
         printf("\n");
+        fflush(stdout);
+    }
 
     poptFreeContext(optCon);
     return processExitStatus(rc);
