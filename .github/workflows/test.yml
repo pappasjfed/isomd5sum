@@ -2,7 +2,7 @@ name: Test
 
 on:
   push:
-    branches: [ master, dev ]
+    branches: [ master, dev, 'copilot/**' ]
   pull_request:
     branches: [ master, dev ]
 
