@@ -27,16 +27,19 @@ else()
 endif()
 
 # Source files for libraries
-set(MD5_SOURCES md5.c sha256.c utilities.c)
-set(LIBIMPLANTISOMD5_SOURCES libimplantisomd5.c ${MD5_SOURCES})
-set(LIBCHECKISOMD5_SOURCES libcheckisomd5.c ${MD5_SOURCES})
+set(HASH_SOURCES md5.c sha256.c utilities.c)
+set(LIBIMPLANTISOMD5_SOURCES libimplantisomd5.c ${HASH_SOURCES})
+set(LIBIMPLANTISOSHA_SOURCES libimplantisosha.c ${HASH_SOURCES})
+set(LIBCHECKISOMD5_SOURCES libcheckisomd5.c ${HASH_SOURCES})
 
 # Create static libraries
 add_library(implantisomd5_static STATIC ${LIBIMPLANTISOMD5_SOURCES})
+add_library(implantisosha_static STATIC ${LIBIMPLANTISOSHA_SOURCES})
 add_library(checkisomd5_static STATIC ${LIBCHECKISOMD5_SOURCES})
 
 # Set library output names
 set_target_properties(implantisomd5_static PROPERTIES OUTPUT_NAME implantisomd5)
+set_target_properties(implantisosha_static PROPERTIES OUTPUT_NAME implantisosha)
 set_target_properties(checkisomd5_static PROPERTIES OUTPUT_NAME checkisomd5)
 
 # Find or build popt
@@ -61,40 +64,54 @@ endif()
 add_executable(implantisomd5 implantisomd5.c)
 target_link_libraries(implantisomd5 implantisomd5_static)
 
+add_executable(implantisosha implantisosha.c)
+target_link_libraries(implantisosha implantisosha_static)
+
 add_executable(checkisomd5 checkisomd5.c)
 target_link_libraries(checkisomd5 checkisomd5_static)
+
+add_executable(checkisosha checkisosha.c)
+target_link_libraries(checkisosha checkisomd5_static)
 
 # Link Windows-specific libraries
 if(WIN32)
     target_link_libraries(implantisomd5 ws2_32)
+    target_link_libraries(implantisosha ws2_32)
     target_link_libraries(checkisomd5 ws2_32)
+    target_link_libraries(checkisosha ws2_32)
 endif()
 
 # Link popt if available
 if(POPT_FOUND)
     if(POPT_LINK_LIBRARIES)
         target_link_libraries(implantisomd5 ${POPT_LINK_LIBRARIES})
+        target_link_libraries(implantisosha ${POPT_LINK_LIBRARIES})
         target_link_libraries(checkisomd5 ${POPT_LINK_LIBRARIES})
+        target_link_libraries(checkisosha ${POPT_LINK_LIBRARIES})
     elseif(POPT_LIBRARY)
         target_link_libraries(implantisomd5 ${POPT_LIBRARY})
+        target_link_libraries(implantisosha ${POPT_LIBRARY})
         target_link_libraries(checkisomd5 ${POPT_LIBRARY})
+        target_link_libraries(checkisosha ${POPT_LIBRARY})
     else()
         target_link_libraries(implantisomd5 popt)
+        target_link_libraries(implantisosha popt)
         target_link_libraries(checkisomd5 popt)
+        target_link_libraries(checkisosha popt)
     endif()
 endif()
 
 # Installation rules
-install(TARGETS implantisomd5 checkisomd5
+install(TARGETS implantisomd5 implantisosha checkisomd5 checkisosha
         RUNTIME DESTINATION bin)
 
-install(TARGETS implantisomd5_static checkisomd5_static
+install(TARGETS implantisomd5_static implantisosha_static checkisomd5_static
         ARCHIVE DESTINATION lib)
 
-install(FILES libimplantisomd5.h libcheckisomd5.h
+install(FILES libimplantisomd5.h libimplantisosha.h libcheckisomd5.h
         DESTINATION include)
 
 if(NOT WIN32)
-    install(FILES implantisomd5.1 checkisomd5.1
+    install(FILES implantisomd5.1 checkisomd5.1 implantisosha.1 checkisosha.1
             DESTINATION share/man/man1)
 endif()
