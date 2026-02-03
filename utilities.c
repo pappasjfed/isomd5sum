@@ -200,12 +200,26 @@ struct volume_info *const parsepvd(const int isofd) {
             task |= TASK_SUPPORTED;
         } else if ((len = starts_with(buffer + index, "FRAGMENT SUMS = "))) {
             index += len;
-            if (index + FRAGMENT_SUM_SIZE >= APPDATA_SIZE)
+            if (index >= APPDATA_SIZE)
                 goto fail;
-            memcpy(result->fragmentsums, buffer + index, FRAGMENT_SUM_SIZE);
-            result->fragmentsums[FRAGMENT_SUM_SIZE] = '\0';
+            
+            /* Find the end of the fragment sum (semicolon) */
+            size_t frag_len = 0;
+            while (index + frag_len < APPDATA_SIZE && 
+                   buffer[index + frag_len] != ';' && 
+                   frag_len < FRAGMENT_SUM_SIZE) {
+                frag_len++;
+            }
+            
+            if (index + frag_len >= APPDATA_SIZE || frag_len > FRAGMENT_SUM_SIZE)
+                goto fail;
+                
+            memcpy(result->fragmentsums, buffer + index, frag_len);
+            result->fragmentsums[frag_len] = '\0';
             task |= TASK_FRAGSUM;
-            index += FRAGMENT_SUM_SIZE;
+            index += frag_len;
+            
+            /* Skip to next semicolon if not already there */
             for (char *p = buffer + index; index < APPDATA_SIZE && *p != ';';
                  p++, index++) {
             }
