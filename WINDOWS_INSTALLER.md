@@ -28,7 +28,21 @@ After installation, make sure NSIS is in your PATH or CMake can find it automati
 
 ## Building the Installer
 
-### Using Visual Studio
+### Quick Build (Automated Script)
+
+For a quick and easy build, use the provided PowerShell script:
+
+```powershell
+.\build-windows-installer.ps1
+```
+
+This script will:
+- Check for all required tools (CMake, NSIS, Visual Studio/MinGW)
+- Configure and build the project
+- Create the installer automatically
+- Display the installer location and size
+
+### Manual Build with Visual Studio
 
 1. Open a "Developer Command Prompt for VS"
 2. Navigate to the repository directory
