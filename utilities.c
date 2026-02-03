@@ -254,13 +254,13 @@ struct volume_info *const parsepvd(const int isofd) {
  */
 bool validate_fragment(const MD5_CTX *const hashctx, const size_t fragment,
                        const size_t fragmentsize, const char *const fragmentsums, char *hashsums) {
-    unsigned char digest[HASH_SIZE / 2];
+    unsigned char digest[MD5_HASH_SIZE / 2];
     MD5_CTX ctx;
     memcpy(&ctx, hashctx, sizeof(ctx));
     MD5_Final(digest, &ctx);
     size_t j = (fragment - 1) * fragmentsize;
     
-    for (size_t i = 0; i < MIN(fragmentsize, HASH_SIZE / 2); i++) {
+    for (size_t i = 0; i < MIN(fragmentsize, MD5_HASH_SIZE / 2); i++) {
         char tmp[3];
         /*
          * Using "3" to avoid compiler warning about truncation.
