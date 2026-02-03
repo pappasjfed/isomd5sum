@@ -40,28 +40,18 @@ jobs:
       
       - name: Install NSIS
         run: |
-          # Download and install NSIS
-          $nsisUrl = "https://sourceforge.net/projects/nsis/files/NSIS%203/3.09/nsis-3.09-setup.exe/download"
-          $nsisInstaller = "$env:TEMP\nsis-setup.exe"
+          # Install NSIS using Chocolatey (pre-installed on GitHub Actions Windows runners)
+          choco install nsis -y
           
-          Write-Host "Downloading NSIS..."
-          Invoke-WebRequest -Uri $nsisUrl -OutFile $nsisInstaller -UserAgent "Mozilla/5.0"
+          # Refresh environment variables
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
           
-          Write-Host "Installing NSIS..."
-          Start-Process -FilePath $nsisInstaller -ArgumentList "/S" -Wait
-          
-          # Add NSIS to PATH for this session
-          $nsisPath = "C:\Program Files (x86)\NSIS"
-          if (Test-Path $nsisPath) {
-            $env:PATH = "$nsisPath;$env:PATH"
-            Write-Host "NSIS installed and added to PATH"
+          # Verify NSIS installation
+          $nsisPath = Get-Command makensis -ErrorAction SilentlyContinue
+          if ($nsisPath) {
+            Write-Host "NSIS installed successfully at: $($nsisPath.Source)"
           } else {
-            Write-Host "NSIS installation path not found, trying alternate location"
-            $nsisPath = "C:\Program Files\NSIS"
-            if (Test-Path $nsisPath) {
-              $env:PATH = "$nsisPath;$env:PATH"
-              Write-Host "NSIS installed and added to PATH"
-            }
+            Write-Host "Warning: NSIS may not be in PATH, but should be available"
           }
       
       - name: Build Installer

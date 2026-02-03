@@ -100,7 +100,7 @@ if(NOT WIN32)
 endif()
 
 # Install documentation files
-install(FILES README COPYING WINDOWS_BUILD.md
+install(FILES README COPYING WINDOWS_BUILD.md WINDOWS_INSTALLER.md
         DESTINATION doc)
 
 # CPack configuration for Windows installer
