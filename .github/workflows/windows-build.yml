@@ -38,6 +38,41 @@ jobs:
           cd build
           cmake --build . --config Release
       
+      - name: Install NSIS
+        run: |
+          # Download and install NSIS
+          $nsisUrl = "https://sourceforge.net/projects/nsis/files/NSIS%203/3.09/nsis-3.09-setup.exe/download"
+          $nsisInstaller = "$env:TEMP\nsis-setup.exe"
+          
+          Write-Host "Downloading NSIS..."
+          Invoke-WebRequest -Uri $nsisUrl -OutFile $nsisInstaller -UserAgent "Mozilla/5.0"
+          
+          Write-Host "Installing NSIS..."
+          Start-Process -FilePath $nsisInstaller -ArgumentList "/S" -Wait
+          
+          # Add NSIS to PATH for this session
+          $nsisPath = "C:\Program Files (x86)\NSIS"
+          if (Test-Path $nsisPath) {
+            $env:PATH = "$nsisPath;$env:PATH"
+            Write-Host "NSIS installed and added to PATH"
+          } else {
+            Write-Host "NSIS installation path not found, trying alternate location"
+            $nsisPath = "C:\Program Files\NSIS"
+            if (Test-Path $nsisPath) {
+              $env:PATH = "$nsisPath;$env:PATH"
+              Write-Host "NSIS installed and added to PATH"
+            }
+          }
+      
+      - name: Build Installer
+        run: |
+          cd build
+          cpack -C Release -G NSIS
+          
+          # List generated files
+          Write-Host "Generated installer files:"
+          Get-ChildItem -Filter "*.exe" | ForEach-Object { Write-Host $_.Name }
+      
       - name: Prepare artifacts
         run: |
           mkdir artifacts
@@ -46,6 +81,16 @@ jobs:
           copy COPYING artifacts\LICENSE.txt
           copy README artifacts\README.txt
           copy WINDOWS_BUILD.md artifacts\WINDOWS_BUILD.txt
+          copy WINDOWS_INSTALLER.md artifacts\WINDOWS_INSTALLER.txt
+          
+          # Copy installer if it exists
+          $installer = Get-ChildItem -Path build -Filter "isomd5sum-*-win64.exe" | Select-Object -First 1
+          if ($installer) {
+            copy $installer.FullName artifacts\
+            Write-Host "Installer copied: $($installer.Name)"
+          } else {
+            Write-Host "No installer found in build directory"
+          }
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -244,6 +289,12 @@ jobs:
           
           # Create MSVC zip
           cd release-msvc
+          # Copy installer separately if it exists
+          if ls isomd5sum-*.exe 1> /dev/null 2>&1; then
+            cp isomd5sum-*.exe ../isomd5sum-${VERSION}-win64.exe
+            # Remove installer from zip to keep it separate
+            rm -f isomd5sum-*.exe
+          fi
           zip -r ../isomd5sum-${VERSION}-windows-x64-msvc.zip .
           cd ..
           
@@ -255,21 +306,36 @@ jobs:
           # Calculate checksums
           sha256sum isomd5sum-${VERSION}-windows-x64-msvc.zip > checksums.txt
           sha256sum isomd5sum-${VERSION}-windows-x64-mingw.zip >> checksums.txt
+          if [ -f "isomd5sum-${VERSION}-win64.exe" ]; then
+            sha256sum isomd5sum-${VERSION}-win64.exe >> checksums.txt
+          fi
       
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             isomd5sum-*.zip
+            isomd5sum-*.exe
             checksums.txt
           body: |
             ## Windows Binaries
             
-            This release includes pre-built Windows executables for isomd5sum tools.
+            This release includes pre-built Windows executables and installer for isomd5sum tools.
             
             ### Downloads
+            
+            #### Windows Installer (Recommended)
+            - **`isomd5sum-*-win64.exe`** - Windows installer that automatically installs the tools and adds them to PATH
+              - Supports both user-level and administrator installations
+              - Automatically configures PATH environment variable
+              - Includes Start Menu shortcuts
+              - Easy uninstallation
+            
+            See `WINDOWS_INSTALLER.txt` for detailed installer usage instructions.
+            
+            #### Portable Executables (Alternative)
             - **MSVC Build** (`isomd5sum-*-windows-x64-msvc.zip`): Built with Visual Studio 2022
-            - **MinGW Build** (`isomd5sum-*-windows-x64-mingw.zip`): Built with MinGW-w64 (may have better compatibility with some systems)
+            - **MinGW Build** (`isomd5sum-*-windows-x64-mingw.zip`): Built with MinGW-w64
             
             ### What's included
             - `checkisomd5.exe` - Check MD5 checksums embedded in ISO images
@@ -277,7 +343,7 @@ jobs:
             - Documentation files
             
             ### Usage
-            See `WINDOWS_BUILD.txt` included in the archive for detailed usage instructions.
+            See `WINDOWS_BUILD.txt` and `WINDOWS_INSTALLER.txt` included in the archives for detailed usage instructions.
             
             ### Checksums
             See `checksums.txt` for SHA256 checksums of the release files.
@@ -326,6 +392,12 @@ jobs:
           
           # Create MSVC zip
           cd release-msvc
+          # Copy installer separately if it exists
+          if ls isomd5sum-*.exe 1> /dev/null 2>&1; then
+            cp isomd5sum-*.exe ../isomd5sum-${VERSION}-win64.exe
+            # Remove installer from zip to keep it separate
+            rm -f isomd5sum-*.exe
+          fi
           zip -r ../isomd5sum-${VERSION}-windows-x64-msvc.zip .
           cd ..
           
@@ -337,6 +409,9 @@ jobs:
           # Calculate checksums
           sha256sum isomd5sum-${VERSION}-windows-x64-msvc.zip > checksums.txt
           sha256sum isomd5sum-${VERSION}-windows-x64-mingw.zip >> checksums.txt
+          if [ -f "isomd5sum-${VERSION}-win64.exe" ]; then
+            sha256sum isomd5sum-${VERSION}-win64.exe >> checksums.txt
+          fi
       
       - name: Create Pre-release
         uses: softprops/action-gh-release@v1
@@ -345,6 +420,7 @@ jobs:
           name: "Pre-release ${{ steps.version.outputs.version }}"
           files: |
             isomd5sum-*.zip
+            isomd5sum-*.exe
             checksums.txt
           body: |
             ## ⚠️ Pre-release / Beta Build
@@ -359,6 +435,11 @@ jobs:
             - **Build Date**: ${{ steps.version.outputs.version }}
             
             ### Downloads
+            
+            #### Windows Installer (Recommended)
+            - **`isomd5sum-*-win64.exe`** - Windows installer (user or system install with PATH configuration)
+            
+            #### Portable Executables (Alternative)
             - **MSVC Build** (`isomd5sum-*-windows-x64-msvc.zip`): Built with Visual Studio 2022
             - **MinGW Build** (`isomd5sum-*-windows-x64-mingw.zip`): Built with MinGW-w64
             
