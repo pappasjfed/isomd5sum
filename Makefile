@@ -87,4 +87,16 @@ archive:
 	@echo "The final archive is in isomd5sum-$(VERSION).tar.bz2"
 
 test:
-	$(PYTHON) ./testpyisomd5sum.py
+	@echo "Running MD5 tests..."
+	$(PYTHON) ./testpyisomd5sum_md5.py
+	@echo ""
+	@echo "Running SHA-256 tests..."
+	$(PYTHON) ./testpyisomd5sum_sha.py
+	@echo ""
+	@echo "All tests completed!"
+
+test-md5:
+	$(PYTHON) ./testpyisomd5sum_md5.py
+
+test-sha:
+	$(PYTHON) ./testpyisomd5sum_sha.py
