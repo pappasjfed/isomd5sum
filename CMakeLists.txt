@@ -98,3 +98,40 @@ if(NOT WIN32)
     install(FILES implantisomd5.1 checkisomd5.1
             DESTINATION share/man/man1)
 endif()
+
+# Install documentation files
+install(FILES README COPYING WINDOWS_BUILD.md WINDOWS_INSTALLER.md
+        DESTINATION doc)
+
+# CPack configuration for Windows installer
+if(WIN32)
+    set(CPACK_GENERATOR "NSIS")
+    set(CPACK_PACKAGE_NAME "isomd5sum")
+    set(CPACK_PACKAGE_VENDOR "isomd5sum Project")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "MD5 checksum tools for ISO images")
+    set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+    set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+    set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+    set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+    set(CPACK_PACKAGE_INSTALL_DIRECTORY "isomd5sum")
+    set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
+    set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README")
+
+    # NSIS-specific settings
+    set(CPACK_NSIS_DISPLAY_NAME "isomd5sum ${PROJECT_VERSION}")
+    set(CPACK_NSIS_PACKAGE_NAME "isomd5sum")
+    set(CPACK_NSIS_HELP_LINK "https://github.com/rhinstaller/isomd5sum")
+    set(CPACK_NSIS_URL_INFO_ABOUT "https://github.com/rhinstaller/isomd5sum")
+    set(CPACK_NSIS_CONTACT "anaconda-devel-list@redhat.com")
+    set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+    set(CPACK_NSIS_MODIFY_PATH ON)
+    
+    # Create Start Menu shortcuts
+    set(CPACK_PACKAGE_EXECUTABLES "checkisomd5;Check ISO MD5" "implantisomd5;Implant ISO MD5")
+    set(CPACK_NSIS_MENU_LINKS
+        "doc/README" "Read Me"
+        "doc/WINDOWS_BUILD.md" "Windows Build Instructions"
+        "https://github.com/rhinstaller/isomd5sum" "isomd5sum on GitHub")
+    
+    include(CPack)
+endif()

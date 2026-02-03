@@ -8,8 +8,9 @@ isomd5sum now supports Windows in addition to Linux/Unix platforms:
 - Check embedded MD5 hashes on ISO images and physical media on Windows
 - Inject MD5 hashes into ISO images created on Windows
 - Build native Windows executables (.exe)
+- Windows installer available for easy installation with automatic PATH configuration
 
-See WINDOWS_BUILD.md for Windows build instructions.
+See WINDOWS_BUILD.md for Windows build instructions and WINDOWS_INSTALLER.md for Windows installer details.
 
 ## Building
 

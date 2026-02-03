@@ -1,10 +1,8 @@
 name: Large File Tests
 
 on:
-  push:
-    branches: [ master, develop, dev, 'copilot/**' ]
-  pull_request:
-    branches: [ master, dev ]
+  push:  # Triggers on all branches
+  pull_request:  # Triggers on all branches
   workflow_dispatch:
 
 permissions:
