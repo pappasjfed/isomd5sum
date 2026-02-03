@@ -1,10 +1,8 @@
 name: Dev Branch Beta Release
 
 on:
-  pull_request:
-    branches: [ dev ]
-  push:
-    branches: [ dev, 'copilot/**' ]
+  pull_request:  # Triggers on all branches
+  push:  # Triggers on all branches
   workflow_dispatch:
 
 # Set minimal default permissions

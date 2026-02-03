@@ -1,12 +1,10 @@
 name: Windows Build and Release
 
 on:
-  push:
-    branches: [ master, develop, dev, 'copilot/**' ]
+  push:  # Triggers on all branches
     tags:
       - 'v*'
-  pull_request:
-    branches: [ master, dev ]
+  pull_request:  # Triggers on all branches
   workflow_dispatch:
 
 # Set minimal default permissions

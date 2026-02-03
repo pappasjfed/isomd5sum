@@ -1,10 +1,8 @@
 name: Test
 
 on:
-  push:
-    branches: [ master, dev, 'copilot/**' ]
-  pull_request:
-    branches: [ master, dev ]
+  push:  # Triggers on all branches
+  pull_request:  # Triggers on all branches
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
