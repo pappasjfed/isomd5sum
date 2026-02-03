@@ -29,6 +29,7 @@
 #endif
 
 #include "md5.h"
+#include "sha256.h"
 
 #include "utilities.h"
 
@@ -132,7 +133,7 @@ struct volume_info *const parsepvd(const int isofd) {
         TASK_SUPPORTED = 1,
         TASK_FRAGCOUNT = 1 << 1,
         TASK_FRAGSUM = 1 << 2,
-        TASK_MD5 = 1 << 3,
+        TASK_HASH = 1 << 3,  /* Renamed from TASK_MD5 to be hash-agnostic */
         TASK_SKIP = 1 << 4,
         TASK_DONE = (1 << 5) - 1
     };
@@ -151,12 +152,14 @@ struct volume_info *const parsepvd(const int isofd) {
     result->fragmentcount = FRAGMENT_COUNT;
     result->offset = offset;
     result->isosize = isosize(aligned_buffer);
+    result->use_sha256 = false;  /* Default to MD5 for backward compatibility */
 
     aligned_free(aligned_buffer);
 
     for (size_t index = 0; index < APPDATA_SIZE;) {
         size_t len;
-        if ((len = starts_with(buffer + index, "ISO MD5SUM = "))) {
+        /* Check for SHA-256 hash first (preferred) */
+        if ((len = starts_with(buffer + index, "ISO SHA256SUM = "))) {
             index += len;
             if (index + HASH_SIZE >= APPDATA_SIZE)
                 goto fail;
@@ -164,7 +167,23 @@ struct volume_info *const parsepvd(const int isofd) {
             memcpy(result->hashsum, buffer + index, HASH_SIZE);
             result->hashsum[HASH_SIZE] = '\0';
             index += HASH_SIZE;
-            task |= TASK_MD5;
+            result->use_sha256 = true;
+            task |= TASK_HASH;
+            /* Skip to next semicolon. */
+            for (char *p = buffer + index; index < APPDATA_SIZE && *p != ';';
+                 p++, index++) {
+            }
+        } else if ((len = starts_with(buffer + index, "ISO MD5SUM = "))) {
+            /* Fall back to MD5 for backward compatibility */
+            index += len;
+            if (index + MD5_HASH_SIZE >= APPDATA_SIZE)
+                goto fail;
+
+            memcpy(result->hashsum, buffer + index, MD5_HASH_SIZE);
+            result->hashsum[MD5_HASH_SIZE] = '\0';
+            index += MD5_HASH_SIZE;
+            result->use_sha256 = false;
+            task |= TASK_HASH;
             /* Skip to next semicolon. */
             for (char *p = buffer + index; index < APPDATA_SIZE && *p != ';';
                  p++, index++) {
@@ -200,7 +219,7 @@ struct volume_info *const parsepvd(const int isofd) {
             break;
     }
 
-    if (task < TASK_SKIP + TASK_MD5) {
+    if (task < TASK_SKIP + TASK_HASH) {
     fail:
         free(result);
         return NULL;
@@ -246,8 +265,46 @@ bool validate_fragment(const MD5_CTX *const hashctx, const size_t fragment,
  * Finalize hashctx and store it in hashsum in base 16.
  */
 void md5sum(char *const hashsum, MD5_CTX *const hashctx) {
-    unsigned char digest[HASH_SIZE / 2];
+    unsigned char digest[MD5_HASH_SIZE / 2];
     MD5_Final(digest, hashctx);
+    *hashsum = '\0';
+    for (size_t i = 0; i < MD5_HASH_SIZE / 2; i++) {
+        char tmp[3];
+        snprintf(tmp, 3, "%02x", digest[i]);
+        strncat(hashsum, tmp, 2);
+    }
+}
+
+/**
+ * Finalize fragment hash for SHA-256 and validate/store it.
+ * Similar to validate_fragment but for SHA-256 hashes.
+ */
+bool validate_fragment_sha256(const SHA256_CTX *const hashctx, const size_t fragment,
+                              const size_t fragmentsize, const char *const fragmentsums, char *hashsums) {
+    unsigned char digest[HASH_SIZE / 2];
+    SHA256_CTX ctx;
+    memcpy(&ctx, hashctx, sizeof(ctx));
+    SHA256_Final(digest, &ctx);
+    size_t j = (fragment - 1) * fragmentsize;
+    
+    for (size_t i = 0; i < MIN(fragmentsize, HASH_SIZE / 2); i++) {
+        char tmp[3];
+        snprintf(tmp, 3, "%01x", digest[i]);
+        if (hashsums != NULL)
+            strncat(hashsums, tmp, 1);
+        if (fragmentsums != NULL && tmp[0] != fragmentsums[j++]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Finalize SHA-256 hashctx and store it in hashsum in base 16.
+ */
+void sha256sum(char *const hashsum, SHA256_CTX *const hashctx) {
+    unsigned char digest[HASH_SIZE / 2];
+    SHA256_Final(digest, hashctx);
     *hashsum = '\0';
     for (size_t i = 0; i < HASH_SIZE / 2; i++) {
         char tmp[3];

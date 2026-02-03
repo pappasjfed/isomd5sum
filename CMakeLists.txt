@@ -27,7 +27,7 @@ else()
 endif()
 
 # Source files for libraries
-set(MD5_SOURCES md5.c utilities.c)
+set(MD5_SOURCES md5.c sha256.c utilities.c)
 set(LIBIMPLANTISOMD5_SOURCES libimplantisomd5.c ${MD5_SOURCES})
 set(LIBCHECKISOMD5_SOURCES libcheckisomd5.c ${MD5_SOURCES})
 
