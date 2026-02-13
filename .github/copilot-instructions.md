@@ -244,7 +244,7 @@ isomd5sum/
 
 - **Repository**: https://github.com/rhinstaller/isomd5sum
 - **Issues**: GitHub Issues tracker
-- **Mailing List**: anaconda-devel-list@redhat.com
+- **Mailing List**: anaconda-devel-list@redhat.com (for questions, patches, and general discussion)
 - **Documentation**: README, man pages, and *.md files in repo
 
 ## Quick Reference
@@ -269,11 +269,15 @@ isomd5sum/
 ### Large File Operations
 
 ```c
-// Linux
+// Linux (file descriptors)
 off_t offset = lseek64(fd, 0, SEEK_END);
 
-// Windows
-__int64 offset = _lseeki64(fd, 0, SEEK_END);
+// Windows (file descriptors)
+__int64 offset = _lseeki64(_fileno(fp), 0, SEEK_END);
+
+// Windows (FILE* streams)
+_fseeki64(fp, 0, SEEK_END);
+__int64 offset = _ftelli64(fp);
 ```
 
 ## Notes
