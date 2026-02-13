@@ -18,7 +18,7 @@ LDFLAGS += -fPIC
 
 PYOBJS = pyisomd5sum.o libcheckisomd5.a libimplantisomd5.a
 
-all: implantisomd5 checkisomd5 pyisomd5sum.so libimplantisomd5.a libcheckisomd5.a
+all: implantisomd5 checkisomd5 implantisosha checkisosha pyisomd5sum.so libimplantisomd5.a libcheckisomd5.a libimplantisosha.a
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -O3 -o $@ $<
@@ -26,12 +26,20 @@ all: implantisomd5 checkisomd5 pyisomd5sum.so libimplantisomd5.a libcheckisomd5.
 implantisomd5: implantisomd5.o libimplantisomd5.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) implantisomd5.o libimplantisomd5.a -lpopt $(LDFLAGS) -o implantisomd5
 
+implantisosha: implantisosha.o libimplantisosha.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) implantisosha.o libimplantisosha.a -lpopt $(LDFLAGS) -o implantisosha
+
 checkisomd5: checkisomd5.o libcheckisomd5.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) checkisomd5.o libcheckisomd5.a -lpopt $(LDFLAGS) -o checkisomd5
 
-libimplantisomd5.a: libimplantisomd5.a(libimplantisomd5.o md5.o utilities.o)
+checkisosha: checkisosha.o libcheckisomd5.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) checkisosha.o libcheckisomd5.a -lpopt $(LDFLAGS) -o checkisosha
 
-libcheckisomd5.a: libcheckisomd5.a(libcheckisomd5.o md5.o utilities.o)
+libimplantisomd5.a: libimplantisomd5.a(libimplantisomd5.o md5.o sha256.o utilities.o)
+
+libimplantisosha.a: libimplantisosha.a(libimplantisosha.o sha256.o md5.o utilities.o)
+
+libcheckisomd5.a: libcheckisomd5.a(libcheckisomd5.o md5.o sha256.o utilities.o)
 
 pyisomd5sum.so: $(PYOBJS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -shared -g -fpic $(PYOBJS) $(LDFLAGS) -o pyisomd5sum.so
@@ -43,8 +51,12 @@ install-bin:
 	install -d -m 0755 $(DESTDIR)/usr/share/man/man1
 	install -m 0755 implantisomd5 $(DESTDIR)/usr/bin
 	install -m 0755 checkisomd5 $(DESTDIR)/usr/bin
+	install -m 0755 implantisosha $(DESTDIR)/usr/bin
+	install -m 0755 checkisosha $(DESTDIR)/usr/bin
 	install -m 0644 implantisomd5.1 $(DESTDIR)/usr/share/man/man1
 	install -m 0644 checkisomd5.1 $(DESTDIR)/usr/share/man/man1
+	install -m 0644 implantisosha.1 $(DESTDIR)/usr/share/man/man1
+	install -m 0644 checkisosha.1 $(DESTDIR)/usr/share/man/man1
 
 install-python:
 	install -d -m 0755 $(DESTDIR)$(PYTHONSITEPACKAGES)
@@ -55,14 +67,16 @@ install-devel:
 	install -d -m 0755 $(DESTDIR)/usr/$(LIBDIR)
 	install -d -m 0755 $(DESTDIR)/usr/share/pkgconfig
 	install -m 0644 libimplantisomd5.h $(DESTDIR)/usr/include/
+	install -m 0644 libimplantisosha.h $(DESTDIR)/usr/include/
 	install -m 0644 libcheckisomd5.h $(DESTDIR)/usr/include/
 	install -m 0644 libimplantisomd5.a $(DESTDIR)/usr/$(LIBDIR)
+	install -m 0644 libimplantisosha.a $(DESTDIR)/usr/$(LIBDIR)
 	install -m 0644 libcheckisomd5.a $(DESTDIR)/usr/$(LIBDIR)
 	sed "s#@VERSION@#${VERSION}#g; s#@includedir@#/usr/include#g; s#@libdir@#/usr/${LIBDIR}#g" isomd5sum.pc.in > ${DESTDIR}/usr/share/pkgconfig/isomd5sum.pc
 
 clean:
 	rm -f *.o *.so *.pyc *.a .depend *~
-	rm -f implantisomd5 checkisomd5 
+	rm -f implantisomd5 checkisomd5 implantisosha checkisosha 
 
 tag:
 	@git tag -a -m "Tag as $(VERSION)" -f $(VERSION)
@@ -73,4 +87,16 @@ archive:
 	@echo "The final archive is in isomd5sum-$(VERSION).tar.bz2"
 
 test:
-	$(PYTHON) ./testpyisomd5sum.py
+	@echo "Running MD5 tests..."
+	$(PYTHON) ./testpyisomd5sum_md5.py
+	@echo ""
+	@echo "Running SHA-256 tests..."
+	$(PYTHON) ./testpyisomd5sum_sha.py
+	@echo ""
+	@echo "All tests completed!"
+
+test-md5:
+	$(PYTHON) ./testpyisomd5sum_md5.py
+
+test-sha:
+	$(PYTHON) ./testpyisomd5sum_sha.py

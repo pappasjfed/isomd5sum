@@ -35,6 +35,7 @@
 #endif
 
 #include "md5.h"
+#include "sha256.h"
 
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -43,7 +44,10 @@
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-#define HASH_SIZE 32
+/* Hash size for SHA-256: 64 hex characters (32 bytes) */
+#define HASH_SIZE 64
+/* Legacy MD5 hash size: 32 hex characters (16 bytes) */
+#define MD5_HASH_SIZE 32
 /* Length in characters of string used for fragment md5sum checking */
 #define FRAGMENT_SUM_SIZE 60UL
 /* FRAGMENT_COUNT must be an integral divisor or FRAGMENT_SUM_SIZE */
@@ -70,6 +74,7 @@ struct volume_info {
     int64_t offset;       /* Use int64_t instead of off_t for Windows compatibility */
     int64_t isosize;      /* Use int64_t instead of off_t for Windows compatibility */
     int64_t skipsectors;  /* Use int64_t instead of off_t for Windows compatibility */
+    bool use_sha256;      /* True if SHA-256 is used, false for MD5 (legacy) */
 };
 
 int64_t primary_volume_size(const int isofd, int64_t *const offset);
@@ -79,6 +84,11 @@ struct volume_info *const parsepvd(const int isofd);
 bool validate_fragment(const MD5_CTX *const hashctx, const size_t fragment,
                        const size_t fragmentsize, const char *const fragmentsums, char *const hashsums);
 
+bool validate_fragment_sha256(const SHA256_CTX *const hashctx, const size_t fragment,
+                              const size_t fragmentsize, const char *const fragmentsums, char *const hashsums);
+
 void md5sum(char *const hashsum, MD5_CTX *const hashctx);
+
+void sha256sum(char *const hashsum, SHA256_CTX *const hashctx);
 
 #endif /* ISOMD5_UTILITIES_H */
