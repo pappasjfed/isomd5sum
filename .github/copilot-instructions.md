@@ -273,9 +273,9 @@ isomd5sum/
 off_t offset = lseek64(fd, 0, SEEK_END);
 
 // Windows (file descriptors)
-__int64 offset = _lseeki64(_fileno(fp), 0, SEEK_END);
+__int64 offset = _lseeki64(fd, 0, SEEK_END);
 
-// Windows (FILE* streams)
+// Windows (FILE* streams - preferred for this codebase)
 _fseeki64(fp, 0, SEEK_END);
 __int64 offset = _ftelli64(fp);
 ```
