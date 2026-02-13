@@ -83,8 +83,8 @@ typedef long ssize_t;
 
 ## Files Modified
 1. `win32_compat.h` - Core compatibility fixes
-2. `MSVC_BUILD_FIX.md` - Detailed technical documentation
-3. `MSVC_BUILD_SUMMARY.md` - This summary
+2. `docs/MSVC_BUILD_FIX.md` - Detailed technical documentation
+3. `docs/MSVC_BUILD_SUMMARY.md` - This summary
 
 ## Next Steps
 The CI pipeline will automatically:

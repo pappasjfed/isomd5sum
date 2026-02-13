@@ -45,7 +45,7 @@ jobs:
           copy build\Release\implantisomd5.exe artifacts\
           copy COPYING artifacts\LICENSE.txt
           copy README artifacts\README.txt
-          copy WINDOWS_BUILD.md artifacts\WINDOWS_BUILD.txt
+          copy docs\WINDOWS_BUILD.md artifacts\WINDOWS_BUILD.txt
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -204,7 +204,7 @@ jobs:
           cp build-mingw/implantisomd5.exe artifacts-mingw/
           cp COPYING artifacts-mingw/LICENSE.txt
           cp README artifacts-mingw/README.txt
-          cp WINDOWS_BUILD.md artifacts-mingw/WINDOWS_BUILD.txt
+          cp docs/WINDOWS_BUILD.md artifacts-mingw/WINDOWS_BUILD.txt
       
       - name: Upload MinGW artifacts
         uses: actions/upload-artifact@v4
