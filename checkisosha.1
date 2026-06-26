@@ -19,6 +19,22 @@ Do not check the target.  Instead, output human-readable information about the t
 Display human-readable progress as the target is checked.  Without this option, nothing is outputted except errors.
 .IP "\fB\-\-gauge\fP" 10
 Display a series of numbers from 0 to 100, corresponding to check progress.  This output can be piped to \fBdialog \-\-gauge\fR for a user-friendly progress bar.
+.SH "EXAMPLES"
+.TP
+Verify an ISO image with a SHA-256 or MD5 checksum and display progress:
+.B checkisosha --verbose myimage.iso
+.TP
+Display embedded checksum information without verifying:
+.B checkisosha --md5sumonly myimage.iso
+.TP
+Use a progress bar via dialog:
+.B checkisosha --gauge myimage.iso | dialog --gauge "Checking media..." 10 70 0
+.TP
+Verify a physical disc or block device:
+.B checkisosha /dev/sr0
+.SH "BUGS"
+.PP
+Report bugs at \fIhttps://github.com/rhinstaller/isomd5sum/issues\fR or via the mailing list at \fIanaconda\-devel\-list@redhat.com\fR.
 .SH "SEE ALSO"
 .PP
 implantisosha (1), implantisomd5 (1), checkisomd5 (1).
