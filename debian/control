@@ -1,0 +1,52 @@
+Source: isomd5sum
+Section: utils
+Priority: optional
+Maintainer: isomd5sum Maintainers <anaconda-devel-list@redhat.com>
+Build-Depends: debhelper-compat (= 13),
+               gcc,
+               make,
+               libpopt-dev,
+               python3-dev,
+               texinfo,
+               xorriso
+Standards-Version: 4.6.2
+Homepage: https://github.com/rhinstaller/isomd5sum
+Rules-Requires-Root: no
+
+Package: isomd5sum
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Suggests: isomd5sum-doc
+Description: MD5 and SHA-256 checksum tools for ISO 9660 images
+ isomd5sum provides tools to implant and verify MD5 or SHA-256 checksums
+ in ISO 9660 images. The checksum is stored in the application data area
+ of the ISO 9660 Primary Volume Descriptor, allowing integrity verification
+ directly from the ISO file or from physical media.
+ .
+ This package contains the command-line tools: checkisomd5, implantisomd5,
+ checkisosha, and implantisosha.
+
+Package: isomd5sum-dev
+Architecture: any
+Section: libdevel
+Depends: isomd5sum (= ${binary:Version}), ${misc:Depends}
+Description: Development files for isomd5sum
+ isomd5sum provides tools to implant and verify MD5 or SHA-256 checksums
+ in ISO 9660 images.
+ .
+ This package contains the static libraries and C header files for
+ developing applications that use the isomd5sum libraries.
+
+Package: isomd5sum-doc
+Architecture: all
+Section: doc
+Multi-Arch: foreign
+Priority: optional
+Depends: ${misc:Depends}
+Description: Documentation for isomd5sum
+ isomd5sum provides tools to implant and verify MD5 or SHA-256 checksums
+ in ISO 9660 images.
+ .
+ This package contains the GNU info manual and supplementary documentation.
+ It can be omitted to keep only the binaries by not installing this package
+ or by using apt-get install --no-install-recommends isomd5sum.

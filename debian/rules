@@ -1,0 +1,22 @@
+#!/usr/bin/make -f
+export DH_VERBOSE = 1
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/buildflags.mk
+include /usr/share/dpkg/architecture.mk
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	$(MAKE)
+	$(MAKE) info
+
+override_dh_auto_install:
+	$(MAKE) install-bin install-devel DESTDIR=$(CURDIR)/debian/tmp \
+		LIBDIR=lib/$(DEB_HOST_MULTIARCH)
+
+override_dh_auto_test:
+	$(MAKE) test-md5
+	$(MAKE) test-sha
