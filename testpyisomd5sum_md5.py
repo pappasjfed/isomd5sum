@@ -39,7 +39,10 @@ with tempfile.TemporaryDirectory(prefix="isomd5test-") as tmpdir:
     try:
         subprocess.check_call(["mkisofs", "-o", "testiso.iso", tmpdir])
     except catch_error:
-        subprocess.check_call(["genisoimage", "-o", "testiso.iso", tmpdir])
+        try:
+            subprocess.check_call(["genisoimage", "-o", "testiso.iso", tmpdir])
+        except catch_error:
+            subprocess.check_call(["xorriso", "-as", "mkisofs", "-o", "testiso.iso", tmpdir])
 
     if not os.path.exists("testiso.iso"):
         print("Error creating iso")

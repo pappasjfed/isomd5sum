@@ -39,6 +39,7 @@ jobs:
 
       - name: Create source tarball
         run: |
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
           VERSION=$(grep '^Version:' isomd5sum.spec | awk '{print $2}')
           echo "Building version: ${VERSION}"
           mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}

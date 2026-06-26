@@ -41,8 +41,12 @@ with tempfile.TemporaryDirectory(prefix="isoshatest-") as tmpdir:
         subprocess.check_call(["mkisofs", "-quiet", "-o", "testiso_sha.iso", tmpdir], 
                             stderr=subprocess.DEVNULL)
     except catch_error:
-        subprocess.check_call(["genisoimage", "-quiet", "-o", "testiso_sha.iso", tmpdir],
-                            stderr=subprocess.DEVNULL)
+        try:
+            subprocess.check_call(["genisoimage", "-quiet", "-o", "testiso_sha.iso", tmpdir],
+                                stderr=subprocess.DEVNULL)
+        except catch_error:
+            subprocess.check_call(["xorriso", "-as", "mkisofs", "-quiet", "-o", "testiso_sha.iso", tmpdir],
+                                stderr=subprocess.DEVNULL)
 
     if not os.path.exists("testiso_sha.iso"):
         print("Error creating iso")
