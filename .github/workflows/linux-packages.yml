@@ -118,6 +118,7 @@ jobs:
           dnf install -y rpms/isomd5sum-doc-*.rpm || \
             rpm -ivh rpms/isomd5sum-doc-*.rpm
           test -f /usr/share/info/isomd5sum.info || \
+          test -f /usr/share/info/isomd5sum.info.gz || \
             { echo "✗ Info file missing"; exit 1; }
           echo "✓ Doc package installed and info file present"
 
@@ -169,6 +170,7 @@ jobs:
           dnf install -y rpms/isomd5sum-doc-*.rpm || \
             rpm -ivh rpms/isomd5sum-doc-*.rpm
           test -f /usr/share/info/isomd5sum.info || \
+          test -f /usr/share/info/isomd5sum.info.gz || \
             { echo "✗ Info file missing"; exit 1; }
           echo "✓ Doc package installed and info file present"
 
@@ -267,6 +269,7 @@ jobs:
         run: |
           apt install -y ./debs/isomd5sum-doc_*.deb
           test -f /usr/share/info/isomd5sum.info || \
+          test -f /usr/share/info/isomd5sum.info.gz || \
             { echo "✗ Info file missing in doc package"; exit 1; }
           echo "✓ Doc package installed and info file present"
 
@@ -330,6 +333,7 @@ jobs:
         run: |
           apt install -y ./debs/isomd5sum-doc_*.deb
           test -f /usr/share/info/isomd5sum.info || \
+          test -f /usr/share/info/isomd5sum.info.gz || \
             { echo "✗ Info file missing in doc package"; exit 1; }
           echo "✓ Doc package installed and info file present"
 

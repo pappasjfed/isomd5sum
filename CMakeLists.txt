@@ -13,7 +13,6 @@ if(WIN32)
     add_definitions(-D_LARGEFILE64_SOURCE=1)
     # For Windows, we need to handle getpagesize and other POSIX functions
 else()
-    add_definitions(-D_GNU_SOURCE=1)
     add_definitions(-D_FILE_OFFSET_BITS=64)
     add_definitions(-D_LARGEFILE_SOURCE=1)
     add_definitions(-D_LARGEFILE64_SOURCE=1)
