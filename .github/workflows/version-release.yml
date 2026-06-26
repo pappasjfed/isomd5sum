@@ -1,0 +1,298 @@
+name: Version Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.2.5)'
+        required: true
+
+# Set minimal default permissions
+permissions:
+  contents: read
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Linux binary build
+  # ──────────────────────────────────────────────────────────────────────────
+  build-linux:
+    name: Build Linux Binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    container:
+      image: registry.fedoraproject.org/fedora:40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          dnf install -y gcc popt-devel python3 python3-devel make xorriso
+      - name: Build
+        run: make
+      - name: Run tests
+        run: |
+          make test-md5
+          make test-sha
+      - name: Prepare artifacts
+        run: |
+          mkdir -p artifacts
+          cp checkisomd5 implantisomd5 checkisosha implantisosha artifacts/
+          cp COPYING artifacts/LICENSE.txt
+          cp README artifacts/README.txt
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: isomd5sum-linux-release
+          path: artifacts/
+          retention-days: 7
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # RPM packages
+  # ──────────────────────────────────────────────────────────────────────────
+  build-rpm:
+    name: Build RPM Packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    container:
+      image: registry.fedoraproject.org/fedora:40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          dnf install -y \
+            gcc make rpm-build popt-devel python3-devel \
+            texinfo xorriso
+      - name: Create source tarball and build RPMs
+        run: |
+          VERSION=$(grep '^Version:' isomd5sum.spec | awk '{print $2}')
+          echo "Building RPMs for version: ${VERSION}"
+          mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+          git archive --format=tar --prefix=isomd5sum-${VERSION}/ HEAD \
+            | bzip2 > ~/rpmbuild/SOURCES/isomd5sum-${VERSION}.tar.bz2
+          cp isomd5sum.spec ~/rpmbuild/SPECS/isomd5sum.spec
+          rpmbuild -ba ~/rpmbuild/SPECS/isomd5sum.spec
+      - name: Collect RPM artifacts
+        run: |
+          mkdir -p rpms
+          find ~/rpmbuild/RPMS -name "*.rpm" -exec cp {} rpms/ \;
+          find ~/rpmbuild/SRPMS -name "*.rpm" -exec cp {} rpms/ \;
+          echo "Built packages:"
+          ls -lh rpms/
+      - name: Upload RPM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: isomd5sum-release-rpms
+          path: rpms/
+          retention-days: 7
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # DEB packages
+  # ──────────────────────────────────────────────────────────────────────────
+  build-deb:
+    name: Build DEB Packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            debhelper devscripts dpkg-dev \
+            gcc make libpopt-dev python3-dev \
+            texinfo xorriso
+      - name: Build DEB packages
+        run: |
+          dpkg-buildpackage -us -uc -b
+          echo "Built packages:"
+          ls -lh ../*.deb
+      - name: Collect DEB artifacts
+        run: |
+          mkdir -p debs
+          cp ../*.deb debs/
+          ls -lh debs/
+      - name: Upload DEB artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: isomd5sum-release-debs
+          path: debs/
+          retention-days: 7
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Windows build (MSVC + NSIS installer)
+  # ──────────────────────────────────────────────────────────────────────────
+  build-windows:
+    name: Build Windows Installer
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up CMake
+        uses: lukka/get-cmake@latest
+      - name: Configure and Build
+        run: |
+          mkdir build
+          cd build
+          cmake -A x64 ..
+          cmake --build . --config Release
+      - name: Build NSIS Installer
+        run: |
+          choco install nsis -y
+          cd build
+          cpack -C Release -G NSIS
+      - name: Prepare artifacts
+        run: |
+          mkdir artifacts
+          copy build\Release\checkisomd5.exe artifacts\
+          copy build\Release\implantisomd5.exe artifacts\
+          copy build\Release\checkisosha.exe artifacts\ 2>$null || true
+          copy build\Release\implantisosha.exe artifacts\ 2>$null || true
+          copy COPYING artifacts\LICENSE.txt
+          copy README artifacts\README.txt
+          $installer = Get-ChildItem -Path build -Filter "isomd5sum-*-win64.exe" | Select-Object -First 1
+          if ($installer) { copy $installer.FullName artifacts\ }
+        shell: pwsh
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: isomd5sum-release-windows
+          path: artifacts/
+          retention-days: 7
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Publish stable release
+  # ──────────────────────────────────────────────────────────────────────────
+  create-release:
+    name: Create Stable Release
+    runs-on: ubuntu-latest
+    needs: [build-linux, build-rpm, build-deb, build-windows]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get release version
+        id: version
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.tag }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          # Strip leading 'v' for archive names
+          VER="${VERSION#v}"
+          echo "tag=${VERSION}" >> $GITHUB_OUTPUT
+          echo "ver=${VER}" >> $GITHUB_OUTPUT
+          echo "Release version: ${VERSION} (${VER})"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./release-artifacts
+
+      - name: Create release archives and calculate checksums
+        run: |
+          VER="${{ steps.version.outputs.ver }}"
+          mkdir -p release
+
+          # Linux tarball
+          cd release-artifacts/isomd5sum-linux-release
+          tar -czf ../../release/isomd5sum-${VER}-linux-x64.tar.gz .
+          zip -r ../../release/isomd5sum-${VER}-linux-x64.zip .
+          cd ../..
+
+          # Windows zip + installer
+          cd release-artifacts/isomd5sum-release-windows
+          # Extract installer separately if present
+          if ls isomd5sum-*.exe 1>/dev/null 2>&1; then
+            cp isomd5sum-*.exe ../../release/
+            rm -f isomd5sum-*.exe
+          fi
+          zip -r ../../release/isomd5sum-${VER}-windows-x64.zip .
+          cd ../..
+
+          # RPMs
+          cp release-artifacts/isomd5sum-release-rpms/*.rpm release/ 2>/dev/null || true
+
+          # DEBs
+          cp release-artifacts/isomd5sum-release-debs/*.deb release/ 2>/dev/null || true
+
+          # Checksums
+          cd release
+          sha256sum * > checksums.txt
+          echo "Release contents:"
+          ls -lh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "isomd5sum ${{ steps.version.outputs.tag }}"
+          files: |
+            release/isomd5sum-*.tar.gz
+            release/isomd5sum-*.zip
+            release/isomd5sum-*.exe
+            release/*.rpm
+            release/*.deb
+            release/checksums.txt
+          body: |
+            ## isomd5sum ${{ steps.version.outputs.tag }}
+
+            ### Downloads
+
+            #### Linux Binaries
+            - `isomd5sum-*-linux-x64.tar.gz` — Tarball (built on Fedora 40)
+            - `isomd5sum-*-linux-x64.zip` — Zip (built on Fedora 40)
+
+            #### RPM Packages (Fedora / RHEL / UBI)
+            | Package | Contents |
+            |---------|----------|
+            | `isomd5sum-*.rpm` | Binaries + man pages |
+            | `isomd5sum-devel-*.rpm` | Headers + static libraries + pkgconfig |
+            | `isomd5sum-doc-*.rpm` | GNU info manual (optional) |
+            | `python3-isomd5sum-*.rpm` | Python 3 bindings |
+            | `isomd5sum-*.src.rpm` | Source RPM |
+
+            Install on Fedora/RHEL (binaries only, no docs):
+            ```
+            dnf install isomd5sum-*.rpm
+            ```
+            Install without documentation:
+            ```
+            dnf install --setopt=tsflags=nodocs isomd5sum-*.rpm
+            ```
+
+            #### DEB Packages (Debian / Ubuntu)
+            | Package | Contents |
+            |---------|----------|
+            | `isomd5sum_*.deb` | Binaries + man pages |
+            | `isomd5sum-dev_*.deb` | Headers + static libraries + pkgconfig |
+            | `isomd5sum-doc_*.deb` | GNU info manual (optional) |
+
+            Install on Debian/Ubuntu (binaries only, no docs):
+            ```
+            apt install ./isomd5sum_*.deb
+            ```
+
+            #### Windows x64
+            - `isomd5sum-*-win64.exe` — NSIS installer (recommended)
+            - `isomd5sum-*-windows-x64.zip` — Portable executables
+
+            ### What's included in the binary packages
+            - `checkisomd5` / `checkisomd5.exe` — verify MD5 checksums in ISO images
+            - `implantisomd5` / `implantisomd5.exe` — implant MD5 checksums into ISO images
+            - `checkisosha` / `checkisosha.exe` — verify SHA-256 or MD5 checksums in ISO images
+            - `implantisosha` / `implantisosha.exe` — implant SHA-256 checksums into ISO images
+
+            ### Checksums
+            See `checksums.txt` for SHA-256 checksums of all release files.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
