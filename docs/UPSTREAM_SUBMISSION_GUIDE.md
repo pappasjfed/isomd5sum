@@ -11,13 +11,13 @@
 Add Windows large file support (>4GB) using int64_t
 ```
 
-**Description** (use PR_SUMMARY.md as template):
+**Description** (use docs/PR_SUMMARY.md as template):
 ```markdown
 ## Summary
 This PR adds support for large files (>4GB) on Windows by replacing 32-bit 
 off_t types with 64-bit int64_t throughout the codebase.
 
-[Include full content from PR_SUMMARY.md]
+[Include full content from docs/PR_SUMMARY.md]
 ```
 
 ### Step 2: Files to Include
@@ -28,12 +28,12 @@ off_t types with 64-bit int64_t throughout the codebase.
 3. `libimplantisomd5.c` - Modified
 4. `libcheckisomd5.c` - Modified
 5. `checkisomd5.c` - Modified
-6. `WINDOWS_PORTING.md` - NEW (documentation)
+6. `docs/WINDOWS_PORTING.md` - NEW (documentation)
 
 **Do NOT include**:
 - Test infrastructure changes (keep in your fork for testing)
 - CI workflow modifications (project-specific)
-- PR_SUMMARY.md (use content in PR description instead)
+- docs/PR_SUMMARY.md (use content in PR description instead)
 - This guide (internal documentation)
 
 ### Step 3: Commit Message
@@ -72,7 +72,7 @@ Benefits:
 - Uses standard C99 types (portable)
 - No breaking changes
 
-See WINDOWS_PORTING.md for detailed technical documentation.
+See docs/WINDOWS_PORTING.md for detailed technical documentation.
 ```
 
 ### Step 4: What to Mention
@@ -144,7 +144,7 @@ passing for multiple ISO sizes including cross-platform verification.
    - Squash into one or a few logical commits
 
 4. **"Can you add more documentation?"**
-   - WINDOWS_PORTING.md is comprehensive
+   - docs/WINDOWS_PORTING.md is comprehensive
    - Happy to add to README if they want
 
 ### Step 7: Follow Their Process
@@ -222,7 +222,7 @@ Your PR should be accepted if:
 1. ✅ Solves real problem (documented)
 2. ✅ Clean implementation (code review)
 3. ✅ Well tested (evidence provided)
-4. ✅ Properly documented (WINDOWS_PORTING.md)
+4. ✅ Properly documented (docs/WINDOWS_PORTING.md)
 5. ✅ Backward compatible (verified)
 6. ✅ Follows project conventions (style check)
 

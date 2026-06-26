@@ -55,7 +55,7 @@ Both Windows test failures (Build #9 and Build #11) followed the same pattern:
 - Impact: Step now exits successfully when tests pass
 
 ### Commit 2: Update Documentation (3557384)
-- File: `WINDOWS_TEST_FIX.md`
+- File: `docs/WINDOWS_TEST_FIX.md`
 - Change: Expanded to cover both Build #9 and Build #11 fixes
 - Impact: Complete documentation of both issues and solutions
 
