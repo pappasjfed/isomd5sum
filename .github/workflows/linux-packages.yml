@@ -29,7 +29,7 @@ jobs:
     container:
       image: registry.fedoraproject.org/fedora:40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install build dependencies
         run: |
@@ -60,7 +60,7 @@ jobs:
           ls -lh rpms/
 
       - name: Upload RPM artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: isomd5sum-rpms
           path: rpms/
@@ -79,7 +79,7 @@ jobs:
       image: registry.access.redhat.com/ubi9/ubi
     steps:
       - name: Download RPM artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: isomd5sum-rpms
           path: ./rpms
@@ -131,7 +131,7 @@ jobs:
       image: registry.access.redhat.com/ubi10/ubi
     steps:
       - name: Download RPM artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: isomd5sum-rpms
           path: ./rpms
@@ -181,7 +181,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install build dependencies
         run: |
@@ -204,7 +204,7 @@ jobs:
           ls -lh debs/
 
       - name: Upload DEB artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: isomd5sum-debs
           path: debs/
@@ -223,7 +223,7 @@ jobs:
       image: debian:stable-slim
     steps:
       - name: Download DEB artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: isomd5sum-debs
           path: ./debs
@@ -284,7 +284,7 @@ jobs:
       image: ubuntu:24.04
     steps:
       - name: Download DEB artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: isomd5sum-debs
           path: ./debs

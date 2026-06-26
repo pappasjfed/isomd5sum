@@ -20,7 +20,7 @@ jobs:
     container:
       image: registry.fedoraproject.org/fedora:39
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install dependencies
         run: |
           dnf install -y gcc popt-devel python3 python3-devel make xorriso
@@ -37,7 +37,7 @@ jobs:
           cp COPYING artifacts/LICENSE.txt
           cp README artifacts/README.txt
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: isomd5sum-linux-makefile
           path: artifacts/
@@ -52,12 +52,12 @@ jobs:
     container:
       image: registry.fedoraproject.org/fedora:39
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install dependencies
         run: |
           dnf install -y popt python3 python3-devel xorriso make gcc
       - name: Download artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: isomd5sum-linux-makefile
           path: ./bin
@@ -92,12 +92,12 @@ jobs:
     container:
       image: registry.fedoraproject.org/fedora:39
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install dependencies
         run: |
           dnf install -y popt python3 python3-devel xorriso make gcc
       - name: Download artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: isomd5sum-linux-makefile
           path: ./bin
@@ -129,7 +129,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -150,7 +150,7 @@ jobs:
           cp COPYING artifacts/LICENSE.txt
           cp README artifacts/README.txt
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: isomd5sum-linux-cmake
           path: artifacts/
@@ -163,13 +163,13 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libpopt0 xorriso
       - name: Download artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: isomd5sum-linux-cmake
           path: ./bin
@@ -230,7 +230,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up CMake
         uses: lukka/get-cmake@latest
       - name: Build
@@ -250,7 +250,7 @@ jobs:
           cp COPYING artifacts/LICENSE.txt
           cp README artifacts/README.txt
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: isomd5sum-windows-cmake
           path: artifacts/
@@ -263,9 +263,9 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Download artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: isomd5sum-windows-cmake
           path: ./bin
@@ -305,9 +305,9 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Download artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: isomd5sum-windows-cmake
           path: ./bin

@@ -26,7 +26,7 @@ jobs:
     container:
       image: registry.fedoraproject.org/fedora:40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install dependencies
         run: |
           dnf install -y gcc popt-devel python3 python3-devel make xorriso
@@ -43,7 +43,7 @@ jobs:
           cp COPYING artifacts/LICENSE.txt
           cp README artifacts/README.txt
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: isomd5sum-linux-release
           path: artifacts/
@@ -60,7 +60,7 @@ jobs:
     container:
       image: registry.fedoraproject.org/fedora:40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install build dependencies
         run: |
           dnf install -y \
@@ -84,7 +84,7 @@ jobs:
           echo "Built packages:"
           ls -lh rpms/
       - name: Upload RPM artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: isomd5sum-release-rpms
           path: rpms/
@@ -99,7 +99,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install build dependencies
         run: |
           sudo apt-get update
@@ -118,7 +118,7 @@ jobs:
           cp ../*.deb debs/
           ls -lh debs/
       - name: Upload DEB artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: isomd5sum-release-debs
           path: debs/
@@ -133,7 +133,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up CMake
         uses: lukka/get-cmake@latest
       - name: Configure and Build
@@ -160,7 +160,7 @@ jobs:
           if ($installer) { copy $installer.FullName artifacts\ }
         shell: pwsh
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: isomd5sum-release-windows
           path: artifacts/
@@ -176,7 +176,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Get release version
         id: version
@@ -193,7 +193,7 @@ jobs:
           echo "Release version: ${VERSION} (${VER})"
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           path: ./release-artifacts
 
