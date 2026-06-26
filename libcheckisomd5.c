@@ -35,6 +35,7 @@
 #endif
 
 #include "md5.h"
+#include "sha256.h"
 #include "libcheckisomd5.h"
 #include "utilities.h"
 
@@ -58,11 +59,18 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
     if (cb)
         cb(cbdata, 0LL, (long long) total_size);
 
-    /* Rewind, compute md5sum. */
+    /* Rewind, compute hash. */
     lseek(isofd, 0LL, SEEK_SET);
 
-    MD5_CTX hashctx;
-    MD5_Init(&hashctx);
+    /* Use SHA-256 or MD5 based on what was found in the ISO */
+    MD5_CTX md5ctx;
+    SHA256_CTX sha256ctx;
+    
+    if (info->use_sha256) {
+        SHA256_Init(&sha256ctx);
+    } else {
+        MD5_Init(&md5ctx);
+    }
 
     const size_t buffer_size = NUM_SYSTEM_SECTORS * SECTOR_SIZE;
     unsigned char *buffer;
@@ -89,17 +97,30 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
             nread = nbyte;
             lseek(isofd, offset + nread, SEEK_SET);
         }
-        /* Make sure appdata which contains the md5sum is cleared. */
+        /* Make sure appdata which contains the hash is cleared. */
         clear_appdata(buffer, nread, info->offset + APPDATA_OFFSET, offset);
 
-        MD5_Update(&hashctx, buffer, (size_t) nread);
+        if (info->use_sha256) {
+            SHA256_Update(&sha256ctx, buffer, (size_t) nread);
+        } else {
+            MD5_Update(&md5ctx, buffer, (size_t) nread);
+        }
+        
         if (info->fragmentcount) {
             const size_t current_fragment = offset / fragment_size;
             const size_t fragmentsize = FRAGMENT_SUM_SIZE / info->fragmentcount;
             /* If we're onto the next fragment, calculate the previous sum and check. */
             if (current_fragment != previous_fragment) {
-                if (!validate_fragment(&hashctx, current_fragment, fragmentsize,
-                                       info->fragmentsums, NULL)) {
+                bool fragment_valid;
+                if (info->use_sha256) {
+                    fragment_valid = validate_fragment_sha256(&sha256ctx, current_fragment, fragmentsize,
+                                                             info->fragmentsums, NULL);
+                } else {
+                    fragment_valid = validate_fragment(&md5ctx, current_fragment, fragmentsize,
+                                                      info->fragmentsums, NULL);
+                }
+                
+                if (!fragment_valid) {
                     /* Exit immediately if current fragment sum is incorrect */
                     free(info);
                     aligned_free(buffer);
@@ -122,7 +143,11 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
         cb(cbdata, (long long) info->isosize, (long long) total_size);
 
     char hashsum[HASH_SIZE + 1];
-    md5sum(hashsum, &hashctx);
+    if (info->use_sha256) {
+        sha256sum(hashsum, &sha256ctx);
+    } else {
+        md5sum(hashsum, &md5ctx);
+    }
 
     int failed = strcmp(info->hashsum, hashsum);
     free(info);
