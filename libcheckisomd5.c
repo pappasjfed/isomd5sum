@@ -194,7 +194,7 @@ int printMD5SUM(const char *file) {
         return ISOMD5SUM_CHECK_NOT_FOUND;
     }
 
-    printf("%s:   %s\n", file, info->hashsum);
+    printf("%s:   %s  [%s]\n", file, info->hashsum, info->use_sha256 ? "SHA-256" : "MD5");
     if (strlen(info->fragmentsums) > 0 && info->fragmentcount > 0) {
         printf("Fragment sums: %s\n", info->fragmentsums);
         printf("Fragment count: %zu\n", info->fragmentcount);
