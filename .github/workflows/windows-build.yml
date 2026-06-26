@@ -68,7 +68,7 @@ jobs:
           copy build\Release\implantisomd5.exe artifacts\
           copy COPYING artifacts\LICENSE.txt
           copy README artifacts\README.txt
-          copy WINDOWS_BUILD.md artifacts\WINDOWS_BUILD.txt
+          copy docs\WINDOWS_BUILD.md artifacts\WINDOWS_BUILD.txt
           copy WINDOWS_INSTALLER.md artifacts\WINDOWS_INSTALLER.txt
           
           # Copy installer if it exists
