@@ -43,7 +43,7 @@ jobs:
           cp COPYING artifacts/LICENSE.txt
           cp README artifacts/README.txt
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: isomd5sum-linux-release
           path: artifacts/
@@ -84,7 +84,7 @@ jobs:
           echo "Built packages:"
           ls -lh rpms/
       - name: Upload RPM artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: isomd5sum-release-rpms
           path: rpms/
@@ -118,7 +118,7 @@ jobs:
           cp ../*.deb debs/
           ls -lh debs/
       - name: Upload DEB artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: isomd5sum-release-debs
           path: debs/
@@ -160,7 +160,7 @@ jobs:
           if ($installer) { copy $installer.FullName artifacts\ }
         shell: pwsh
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: isomd5sum-release-windows
           path: artifacts/
@@ -193,7 +193,7 @@ jobs:
           echo "Release version: ${VERSION} (${VER})"
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: ./release-artifacts
 
@@ -231,7 +231,7 @@ jobs:
           ls -lh
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: "isomd5sum ${{ steps.version.outputs.tag }}"

@@ -36,7 +36,7 @@ jobs:
           cp COPYING artifacts/LICENSE.txt
           cp README artifacts/README.txt
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: isomd5sum-linux-dev
           path: artifacts/
@@ -74,7 +74,7 @@ jobs:
           copy README artifacts\README.txt
       
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: isomd5sum-windows-dev
           path: artifacts/
@@ -96,25 +96,25 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Download Linux artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: isomd5sum-linux-dev
           path: ./release-linux
       
       - name: Download Windows artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: isomd5sum-windows-dev
           path: ./release-windows
 
       - name: Download RPM artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: isomd5sum-rpms
           path: ./release-rpms
 
       - name: Download DEB artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: isomd5sum-debs
           path: ./release-debs
@@ -159,7 +159,7 @@ jobs:
           done
       
       - name: Create Beta Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: "Beta Release ${{ steps.version.outputs.version }}"

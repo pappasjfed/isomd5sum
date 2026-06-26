@@ -37,7 +37,7 @@ jobs:
           ./test_cross_platform.sh --create --large --verbose
       
       - name: Upload Linux test ISOs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: linux-test-isos
           path: test/cross_platform/
@@ -73,7 +73,7 @@ jobs:
           ./test_cross_platform.sh --create --large --verbose --tools-dir ../build/Release
       
       - name: Upload Windows test ISOs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: windows-test-isos
           path: test/cross_platform/
@@ -92,7 +92,7 @@ jobs:
         uses: lukka/get-cmake@latest
       
       - name: Download Linux test ISOs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: linux-test-isos
           path: test/cross_platform
@@ -172,7 +172,7 @@ jobs:
           make checkisomd5
       
       - name: Download Windows test ISOs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: windows-test-isos
           path: test/cross_platform

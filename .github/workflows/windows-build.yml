@@ -81,7 +81,7 @@ jobs:
           }
       
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: isomd5sum-windows-x64
           path: artifacts/
@@ -107,7 +107,7 @@ jobs:
           Write-Host "✓ Test assets retrieved"
       
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: isomd5sum-windows-x64
           path: ./bin
@@ -240,7 +240,7 @@ jobs:
           cp docs/WINDOWS_BUILD.md artifacts-mingw/WINDOWS_BUILD.txt
       
       - name: Upload MinGW artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: isomd5sum-windows-x64-mingw
           path: artifacts-mingw/
@@ -259,13 +259,13 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Download MSVC artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: isomd5sum-windows-x64
           path: ./release-msvc
       
       - name: Download MinGW artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: isomd5sum-windows-x64-mingw
           path: ./release-mingw
@@ -308,7 +308,7 @@ jobs:
           fi
       
       - name: Create Pre-release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: "Pre-release ${{ steps.version.outputs.version }}"
