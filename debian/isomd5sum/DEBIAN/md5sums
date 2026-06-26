@@ -1,0 +1,10 @@
+953c0d845038258a73bd982d906a18eb  usr/bin/checkisomd5
+912cc9a3448a45f4eb096127df99cd27  usr/bin/checkisosha
+345fbf9f918182d7b224ff5644024390  usr/bin/implantisomd5
+e3c54003bc60b6306ad32af8d8b4514c  usr/bin/implantisosha
+4eb7d3ca5b860919ef3b16dbe5b71ee0  usr/share/doc/isomd5sum/changelog.gz
+3713420439e47555b33ef114b4d0b186  usr/share/doc/isomd5sum/copyright
+96ffa36e8c1bf292caca9809c017385b  usr/share/man/man1/checkisomd5.1.gz
+81aaabad830a8cfb7246d09ed74552b8  usr/share/man/man1/checkisosha.1.gz
+08f8ad8368294e9b8d4b33728a77dfd4  usr/share/man/man1/implantisomd5.1.gz
+c0886f762fdf75321a696bb1b1a7dcd3  usr/share/man/man1/implantisosha.1.gz

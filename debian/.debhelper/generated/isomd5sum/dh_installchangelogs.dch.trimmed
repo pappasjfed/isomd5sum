@@ -1,0 +1,5 @@
+isomd5sum (1.2.5) unstable; urgency=low
+
+  * Initial Debian packaging.
+
+ -- isomd5sum Maintainers <anaconda-devel-list@redhat.com>  Thu, 01 Jan 2024 00:00:00 +0000

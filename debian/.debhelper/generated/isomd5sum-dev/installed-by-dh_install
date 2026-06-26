@@ -1,0 +1,7 @@
+debian/tmp/usr/include/libcheckisomd5.h
+debian/tmp/usr/include/libimplantisomd5.h
+debian/tmp/usr/include/libimplantisosha.h
+debian/tmp/usr/lib/x86_64-linux-gnu/libcheckisomd5.a
+debian/tmp/usr/lib/x86_64-linux-gnu/libimplantisomd5.a
+debian/tmp/usr/lib/x86_64-linux-gnu/libimplantisosha.a
+debian/tmp/usr/share/pkgconfig/isomd5sum.pc

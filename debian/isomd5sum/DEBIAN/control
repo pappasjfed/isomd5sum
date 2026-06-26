@@ -1,0 +1,18 @@
+Package: isomd5sum
+Version: 1.2.5
+Architecture: amd64
+Maintainer: isomd5sum Maintainers <anaconda-devel-list@redhat.com>
+Installed-Size: 99
+Depends: libc6 (>= 2.38), libpopt0 (>= 1.14)
+Suggests: isomd5sum-doc
+Section: utils
+Priority: optional
+Homepage: https://github.com/rhinstaller/isomd5sum
+Description: MD5 and SHA-256 checksum tools for ISO 9660 images
+ isomd5sum provides tools to implant and verify MD5 or SHA-256 checksums
+ in ISO 9660 images. The checksum is stored in the application data area
+ of the ISO 9660 Primary Volume Descriptor, allowing integrity verification
+ directly from the ISO file or from physical media.
+ .
+ This package contains the command-line tools: checkisomd5, implantisomd5,
+ checkisosha, and implantisosha.

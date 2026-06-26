@@ -1,0 +1,16 @@
+Package: isomd5sum-dev
+Source: isomd5sum
+Version: 1.2.5
+Architecture: amd64
+Maintainer: isomd5sum Maintainers <anaconda-devel-list@redhat.com>
+Installed-Size: 87
+Depends: isomd5sum (= 1.2.5)
+Section: libdevel
+Priority: optional
+Homepage: https://github.com/rhinstaller/isomd5sum
+Description: Development files for isomd5sum
+ isomd5sum provides tools to implant and verify MD5 or SHA-256 checksums
+ in ISO 9660 images.
+ .
+ This package contains the static libraries and C header files for
+ developing applications that use the isomd5sum libraries.

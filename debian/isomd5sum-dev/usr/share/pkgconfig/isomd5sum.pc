@@ -1,0 +1,9 @@
+includedir=/usr/include
+libdir=/usr/lib/x86_64-linux-gnu
+
+Name: isomd5sum
+Description: Utilities for working with md5sum implanted in ISO images
+URL: https://github.com/rhinstaller/isomd5sum
+Version: 1.2.5
+Cflags: -I${includedir}
+Libs: -L${libdir}

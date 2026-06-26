@@ -1,0 +1,5 @@
+isomd5sum-dbgsym_1.2.5_amd64.ddeb debug optional automatic=yes
+isomd5sum-dev_1.2.5_amd64.deb libdevel optional
+isomd5sum-doc_1.2.5_all.deb doc optional
+isomd5sum_1.2.5_amd64.buildinfo utils optional
+isomd5sum_1.2.5_amd64.deb utils optional

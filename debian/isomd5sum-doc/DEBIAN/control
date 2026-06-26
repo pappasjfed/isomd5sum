@@ -1,0 +1,17 @@
+Package: isomd5sum-doc
+Source: isomd5sum
+Version: 1.2.5
+Architecture: all
+Maintainer: isomd5sum Maintainers <anaconda-devel-list@redhat.com>
+Installed-Size: 23
+Section: doc
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://github.com/rhinstaller/isomd5sum
+Description: Documentation for isomd5sum
+ isomd5sum provides tools to implant and verify MD5 or SHA-256 checksums
+ in ISO 9660 images.
+ .
+ This package contains the GNU info manual and supplementary documentation.
+ It can be omitted to keep only the binaries by not installing this package
+ or by using apt-get install --no-install-recommends isomd5sum.

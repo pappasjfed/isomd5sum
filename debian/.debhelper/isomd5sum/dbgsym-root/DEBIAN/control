@@ -1,0 +1,13 @@
+Package: isomd5sum-dbgsym
+Package-Type: ddeb
+Source: isomd5sum
+Version: 1.2.5
+Auto-Built-Package: debug-symbols
+Architecture: amd64
+Maintainer: isomd5sum Maintainers <anaconda-devel-list@redhat.com>
+Installed-Size: 107
+Depends: isomd5sum (= 1.2.5)
+Section: debug
+Priority: optional
+Description: debug symbols for isomd5sum
+Build-Ids: 18cf7a3f3cc71d15b34074bbb52a643df29aceaf 1f7222355ff3c3b65e96019d23859de75871db61 3922166eb633e001a17b2c60ae3b7f7140592b44 9179e77d9a89a4d334b646a47597d66540aa1448

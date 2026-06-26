@@ -1,0 +1,9 @@
+cef2bdd738caf6353fdcb66d3b40bc6a  usr/include/libcheckisomd5.h
+4b7df9f5e13d75c5fda3dbaa8977e288  usr/include/libimplantisomd5.h
+3e67dbcc2479fac836eecb285c9b770d  usr/include/libimplantisosha.h
+1a57e3e957763a111169a873226e0124  usr/lib/x86_64-linux-gnu/libcheckisomd5.a
+9a42a7cf09d04586c1661462cd882e7f  usr/lib/x86_64-linux-gnu/libimplantisomd5.a
+3dc5a8033b31e06639eb8563f3ae6cae  usr/lib/x86_64-linux-gnu/libimplantisosha.a
+4eb7d3ca5b860919ef3b16dbe5b71ee0  usr/share/doc/isomd5sum-dev/changelog.gz
+3713420439e47555b33ef114b4d0b186  usr/share/doc/isomd5sum-dev/copyright
+d35bef9247275fccc104801d230822d0  usr/share/pkgconfig/isomd5sum.pc
