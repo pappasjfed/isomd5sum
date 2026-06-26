@@ -92,7 +92,7 @@ jobs:
       - name: Install build dependencies
         run: |
           dnf install -y \
-            gcc make rpm-build popt-devel python3-devel \
+            git gcc make rpm-build popt-devel python3-devel \
             texinfo xorriso
       - name: Create source tarball and build RPMs
         run: |
@@ -125,7 +125,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            debhelper devscripts dpkg-dev \
+            build-essential debhelper devscripts dpkg-dev \
             gcc make libpopt-dev python3-dev \
             texinfo xorriso
       - name: Build DEB packages
