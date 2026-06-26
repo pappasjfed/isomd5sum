@@ -2,7 +2,8 @@
 # This script helps build and validate the Windows installer locally
 
 param(
-    [switch]$UserOnly
+    [switch]$UserOnly,
+    [switch]$SystemOnly
 )
 
 Write-Host "========================================" -ForegroundColor Cyan
@@ -45,12 +46,20 @@ Write-Host ""
 Write-Host "Building Windows installer..." -ForegroundColor Yellow
 Write-Host ""
 
-$cmakeInstallerScopeArg = if ($UserOnly) {
-    Write-Host "Installer scope: current user only" -ForegroundColor Yellow
-    "-DISOMD5SUM_NSIS_USER_INSTALL=ON"
+if ($UserOnly -and $SystemOnly) {
+    Write-Host "❌ Specify only one of -UserOnly or -SystemOnly." -ForegroundColor Red
+    exit 1
+}
+
+$cmakeInstallerScopeArgs = if ($UserOnly) {
+    Write-Host "Installer scope: current user only (forced)" -ForegroundColor Yellow
+    @("-DISOMD5SUM_NSIS_USER_INSTALL=ON", "-DISOMD5SUM_NSIS_AUTO_INSTALL_SCOPE=OFF")
+} elseif ($SystemOnly) {
+    Write-Host "Installer scope: system-wide only (forced)" -ForegroundColor Yellow
+    @("-DISOMD5SUM_NSIS_USER_INSTALL=OFF", "-DISOMD5SUM_NSIS_AUTO_INSTALL_SCOPE=OFF")
 } else {
-    Write-Host "Installer scope: system-wide (default)" -ForegroundColor Yellow
-    "-DISOMD5SUM_NSIS_USER_INSTALL=OFF"
+    Write-Host "Installer scope: auto (user-level by default, with elevation option for system-level)" -ForegroundColor Yellow
+    @("-DISOMD5SUM_NSIS_USER_INSTALL=OFF", "-DISOMD5SUM_NSIS_AUTO_INSTALL_SCOPE=ON")
 }
 
 # Create build directory
@@ -66,20 +75,20 @@ Set-Location $buildDir
 # Configure with CMake
 Write-Host "Configuring with CMake..." -ForegroundColor Yellow
 try {
-    cmake -G "Visual Studio 17 2022" -A x64 $cmakeInstallerScopeArg ..
+    cmake -G "Visual Studio 17 2022" -A x64 @cmakeInstallerScopeArgs ..
     if ($LASTEXITCODE -ne 0) {
         throw "CMake configuration failed"
     }
 } catch {
     Write-Host "Visual Studio 17 not found, trying Visual Studio 16..." -ForegroundColor Yellow
     try {
-        cmake -G "Visual Studio 16 2019" -A x64 $cmakeInstallerScopeArg ..
+        cmake -G "Visual Studio 16 2019" -A x64 @cmakeInstallerScopeArgs ..
         if ($LASTEXITCODE -ne 0) {
             throw "CMake configuration failed"
         }
     } catch {
         Write-Host "Visual Studio build failed, trying MinGW..." -ForegroundColor Yellow
-        cmake -G "MinGW Makefiles" $cmakeInstallerScopeArg ..
+        cmake -G "MinGW Makefiles" @cmakeInstallerScopeArgs ..
         if ($LASTEXITCODE -ne 0) {
             Write-Host "❌ CMake configuration failed" -ForegroundColor Red
             Set-Location ..

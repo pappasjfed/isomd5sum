@@ -36,10 +36,16 @@ For a quick and easy build, use the provided PowerShell script:
 .\build-windows-installer.ps1
 ```
 
-To build a user-only installer (installs under the current user's profile), use:
+To build a user-only installer (installs under the current user's profile with no system-level prompt), use:
 
 ```powershell
 .\build-windows-installer.ps1 -UserOnly
+```
+
+To build a system-only installer (always expects elevation and installs for all users), use:
+
+```powershell
+.\build-windows-installer.ps1 -SystemOnly
 ```
 
 This script will:
@@ -48,7 +54,12 @@ This script will:
 - Create the installer automatically
 - Display the installer location and size
 
-By default, the script builds a system-level installer. Pass `-UserOnly` to build a current-user installer.
+By default, the script builds an installer that:
+- Detects whether it is running elevated
+- Uses user-level install by default when launched unelevated
+- Offers a clear "restart as administrator" path for system-level install
+
+Use `-UserOnly` to force current-user install only, or `-SystemOnly` to force system-level behavior only.
 
 ### Manual Build with Visual Studio
 
@@ -107,8 +118,10 @@ cpack
 1. **Download** the installer executable (`isomd5sum-<version>-win64.exe`)
 
 2. **Run the installer**:
-   - **User-level install**: Double-click the installer and proceed without administrator privileges. The tools will be installed in your user directory and added to your user PATH.
-   - **System-level install**: Right-click the installer and select "Run as administrator". The tools will be installed in Program Files and added to the system PATH.
+   - **When started normally (not elevated)**: It defaults to user-level install and gives an explicit option to restart as administrator for a system-level install.
+   - **When started as administrator**: It installs system-wide by default (Program Files + system PATH).
+   - **User-level install**: Continue without elevation. Tools are installed in your user directory and added to your user PATH.
+   - **System-level install**: Accept the restart/elevation prompt, or right-click and select "Run as administrator".
 
 3. **Follow the installation wizard**:
    - Accept the license agreement

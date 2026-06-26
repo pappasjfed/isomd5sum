@@ -123,8 +123,11 @@ install(FILES README COPYING docs/WINDOWS_BUILD.md WINDOWS_INSTALLER.md
 # CPack configuration for Windows installer
 if(WIN32)
     option(ISOMD5SUM_NSIS_USER_INSTALL
-           "Build NSIS installer for current-user installation (default is system-wide)"
+           "Build NSIS installer for current-user installation only"
            OFF)
+    option(ISOMD5SUM_NSIS_AUTO_INSTALL_SCOPE
+           "Allow installer to run unelevated by default and offer restart as administrator for all-users install"
+           ON)
 
     set(CPACK_GENERATOR "NSIS")
     set(CPACK_PACKAGE_NAME "isomd5sum")
@@ -147,7 +150,20 @@ if(WIN32)
     set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
     set(CPACK_NSIS_MODIFY_PATH ON)
     if(ISOMD5SUM_NSIS_USER_INSTALL)
+        set(CPACK_NSIS_DEFINES "RequestExecutionLevel user")
         set(CPACK_NSIS_INSTALL_ROOT "$LOCALAPPDATA")
+    elseif(ISOMD5SUM_NSIS_AUTO_INSTALL_SCOPE)
+        set(CPACK_NSIS_DEFINES "RequestExecutionLevel highest")
+        set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS [=[
+IfSilent isomd5sum_scope_done
+StrCmp $SV_ALLUSERS "JustMe" 0 isomd5sum_scope_done
+MessageBox MB_YESNO|MB_ICONQUESTION \
+  "Installing for the current user.$\n$\nSelect Yes to restart the installer as administrator for a system-level install, or No to continue with user-level install." \
+  IDNO isomd5sum_scope_done
+ExecShell "runas" "$EXEPATH" "/AllUsers"
+Abort
+isomd5sum_scope_done:
+]=])
     endif()
     
     # Create Start Menu shortcuts
