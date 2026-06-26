@@ -138,6 +138,7 @@ if(WIN32)
     set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
     set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
     set(CPACK_PACKAGE_INSTALL_DIRECTORY "isomd5sum")
+    set(CPACK_VERBATIM_VARIABLES TRUE)
     set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
     set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README")
 
@@ -154,16 +155,14 @@ if(WIN32)
         set(CPACK_NSIS_INSTALL_ROOT "$LOCALAPPDATA")
     elseif(ISOMD5SUM_NSIS_AUTO_INSTALL_SCOPE)
         set(CPACK_NSIS_DEFINES "RequestExecutionLevel highest")
-        set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS [=[
-IfSilent isomd5sum_scope_done
-StrCmp $SV_ALLUSERS "JustMe" 0 isomd5sum_scope_done
-MessageBox MB_YESNO|MB_ICONQUESTION \
-  "Installing for the current user.$\n$\nSelect Yes to restart the installer as administrator for a system-level install, or No to continue with user-level install." \
-  IDNO isomd5sum_scope_done
-ExecShell "runas" "$EXEPATH" "/AllUsers"
-Abort
-isomd5sum_scope_done:
-]=])
+        string(CONCAT ISOMD5SUM_NSIS_PREINSTALL_COMMANDS
+            "IfSilent isomd5sum_scope_done\n"
+            "StrCmp \\$SV_ALLUSERS \"JustMe\" 0 isomd5sum_scope_done\n"
+            "MessageBox MB_YESNO|MB_ICONQUESTION \"Installing for the current user.$\\n$\\nSelect Yes to restart the installer as administrator for a system-level install, or No to continue with user-level install.\" IDNO isomd5sum_scope_done\n"
+            "ExecShell \"runas\" \"\\$EXEPATH\" \"/AllUsers\"\n"
+            "Abort\n"
+            "isomd5sum_scope_done:\n")
+        set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "${ISOMD5SUM_NSIS_PREINSTALL_COMMANDS}")
     endif()
     
     # Create Start Menu shortcuts
