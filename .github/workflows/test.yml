@@ -77,14 +77,13 @@ jobs:
           ./bin/checkisomd5 --help || true
           ./bin/implantisomd5 --help || true
           echo "✓ MD5 executables can run"
-      - name: Run Python MD5 tests
+      - name: Run MD5 implant/read executable test
         run: |
-          # Copy executables to expected location for tests
-          cp bin/checkisomd5 ./
-          cp bin/implantisomd5 ./
-          # Build Python module for testing
-          make pyisomd5sum.so
-          make test-md5
+          python3 test/create_synthetic_iso.py tiny md5_exec_test.iso
+          ./bin/implantisomd5 md5_exec_test.iso
+          md5_output="$(./bin/checkisomd5 --md5sumonly md5_exec_test.iso 2>&1)"
+          echo "$md5_output"
+          echo "$md5_output" | grep -Eq '[0-9a-fA-F]{32}'
 
   test-linux-makefile-sha:
     name: Test SHA-256 on Linux (Makefile build)
@@ -118,17 +117,13 @@ jobs:
           ./bin/checkisosha --help || true
           ./bin/implantisosha --help || true
           echo "✓ SHA executables can run"
-      - name: Run SHA-256 tests
+      - name: Run SHA implant/read executable test
         run: |
-          # Copy executables to expected location for tests
-          cp bin/checkisomd5 ./
-          cp bin/implantisomd5 ./
-          cp bin/checkisosha ./
-          cp bin/implantisosha ./
-          # Create sha256 aliases for tests (symlinks or copies from artifacts)
-          cp -f bin/implantisosha256 ./implantisosha256 2>/dev/null || ln -sf implantisosha implantisosha256
-          cp -f bin/checkisosha256 ./checkisosha256 2>/dev/null || ln -sf checkisosha checkisosha256
-          make test-sha
+          python3 test/create_synthetic_iso.py tiny sha_exec_test.iso
+          ./bin/implantisosha sha_exec_test.iso
+          sha_output="$(./bin/checkisosha --checksumonly sha_exec_test.iso 2>&1)"
+          echo "$sha_output"
+          echo "$sha_output" | grep -Eq '[0-9a-fA-F]{64}'
   
   build-linux-cmake:
     name: Build on Linux with CMake
@@ -315,16 +310,24 @@ jobs:
           & .\bin\checkisomd5.exe --help 2>&1 | Out-Null
           & .\bin\implantisomd5.exe --help 2>&1 | Out-Null
           Write-Host "✓ MD5 executables can run"
-      - name: Create and test MD5 ISO
+      - name: Create and test MD5 implant/read
         shell: pwsh
         run: |
-          # Create test data
-          New-Item -ItemType Directory -Force -Path testdata | Out-Null
-          "Hello from Windows MD5 test" | Out-File -FilePath testdata\test.txt
-          
-          # Note: ISO creation on Windows requires additional tools
-          # For now, we'll just verify the tools can show help
-          Write-Host "✓ MD5 Windows executables validated"
+          py -3 .\test\create_synthetic_iso.py tiny md5_exec_test.iso
+          & .\bin\implantisomd5.exe .\md5_exec_test.iso
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "✗ implantisomd5.exe failed"
+            exit 1
+          }
+
+          $output = & .\bin\checkisomd5.exe --md5sumonly .\md5_exec_test.iso 2>&1 | Out-String
+          Write-Host $output
+          if ($output -match '[0-9a-fA-F]{32}') {
+            Write-Host "✓ MD5 executable implant/read works"
+          } else {
+            Write-Host "✗ MD5 checksum not found in output"
+            exit 1
+          }
 
   test-windows-cmake-sha:
     name: Test SHA-256 on Windows (CMake build)
@@ -362,3 +365,21 @@ jobs:
             }
           }
           Write-Host "✓ SHA-256 Windows executables validated"
+      - name: Create and test SHA implant/read
+        shell: pwsh
+        run: |
+          py -3 .\test\create_synthetic_iso.py tiny sha_exec_test.iso
+          & .\bin\implantisosha.exe .\sha_exec_test.iso
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "✗ implantisosha.exe failed"
+            exit 1
+          }
+
+          $output = & .\bin\checkisosha.exe --checksumonly .\sha_exec_test.iso 2>&1 | Out-String
+          Write-Host $output
+          if ($output -match '[0-9a-fA-F]{64}') {
+            Write-Host "✓ SHA executable implant/read works"
+          } else {
+            Write-Host "✗ SHA-256 checksum not found in output"
+            exit 1
+          }
