@@ -33,6 +33,10 @@ jobs:
           mkdir -p artifacts
           cp checkisomd5 artifacts/
           cp implantisomd5 artifacts/
+          cp checkisosha artifacts/
+          cp implantisosha artifacts/
+          cp -L implantisosha256 artifacts/implantisosha256
+          cp -L checkisosha256 artifacts/checkisosha256
           cp COPYING artifacts/LICENSE.txt
           cp README artifacts/README.txt
       - name: Upload artifacts
@@ -70,6 +74,10 @@ jobs:
           mkdir artifacts
           copy build\Release\checkisomd5.exe artifacts\
           copy build\Release\implantisomd5.exe artifacts\
+          copy build\Release\checkisosha.exe artifacts\
+          copy build\Release\implantisosha.exe artifacts\
+          copy build\Release\checkisosha256.exe artifacts\
+          copy build\Release\implantisosha256.exe artifacts\
           copy COPYING artifacts\LICENSE.txt
           copy README artifacts\README.txt
       
@@ -134,7 +142,7 @@ jobs:
           sha256sum isomd5sum-${VERSION}-windows-x64.zip >> checksums.txt
       
       - name: Create Beta Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: "Beta Release ${{ steps.version.outputs.version }}"
@@ -164,6 +172,10 @@ jobs:
             ### What's included
             - `checkisomd5` / `checkisomd5.exe` - Check MD5 checksums embedded in ISO images
             - `implantisomd5` / `implantisomd5.exe` - Implant MD5 checksums into ISO images
+            - `checkisosha` / `checkisosha.exe` - Check SHA-256 checksums embedded in ISO images
+            - `implantisosha` / `implantisosha.exe` - Implant SHA-256 checksums into ISO images
+            - `checkisosha256` / `checkisosha256.exe` - Alias for checkisosha (explicit SHA-256 name)
+            - `implantisosha256` / `implantisosha256.exe` - Alias for implantisosha (explicit SHA-256 name)
             - Documentation files
             
             ### Checksums

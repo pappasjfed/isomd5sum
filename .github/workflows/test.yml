@@ -34,6 +34,9 @@ jobs:
           cp implantisomd5 artifacts/
           cp checkisosha artifacts/
           cp implantisosha artifacts/
+          # sha256 aliases are symlinks; copy as files so they survive artifact packaging
+          cp -L implantisosha256 artifacts/implantisosha256
+          cp -L checkisosha256 artifacts/checkisosha256
           cp COPYING artifacts/LICENSE.txt
           cp README artifacts/README.txt
       - name: Upload artifacts
@@ -104,6 +107,7 @@ jobs:
       - name: Make executables runnable
         run: |
           chmod +x bin/checkisomd5 bin/implantisomd5 bin/checkisosha bin/implantisosha
+          chmod +x bin/implantisosha256 bin/checkisosha256 || true
       - name: Test SHA executables exist
         run: |
           test -f bin/checkisosha || exit 1
@@ -121,6 +125,9 @@ jobs:
           cp bin/implantisomd5 ./
           cp bin/checkisosha ./
           cp bin/implantisosha ./
+          # Create sha256 aliases for tests (symlinks or copies from artifacts)
+          cp -f bin/implantisosha256 ./implantisosha256 2>/dev/null || ln -sf implantisosha implantisosha256
+          cp -f bin/checkisosha256 ./checkisosha256 2>/dev/null || ln -sf checkisosha checkisosha256
           make test-sha
   
   build-linux-cmake:
@@ -147,6 +154,10 @@ jobs:
           cp build/implantisomd5 artifacts/
           cp build/checkisosha artifacts/ || echo "checkisosha not found"
           cp build/implantisosha artifacts/ || echo "implantisosha not found"
+          # sha256 aliases (created by CMake install code at build time via install rules;
+          # for artifact collection we create symlinks from the build output)
+          ln -sf implantisosha artifacts/implantisosha256 2>/dev/null || cp build/implantisosha artifacts/implantisosha256 || true
+          ln -sf checkisosha artifacts/checkisosha256 2>/dev/null || cp build/checkisosha artifacts/checkisosha256 || true
           cp COPYING artifacts/LICENSE.txt
           cp README artifacts/README.txt
       - name: Upload artifacts
@@ -212,15 +223,30 @@ jobs:
         run: |
           # Create new ISO for SHA test
           xorriso -as mkisofs -o test-sha.iso -V "TEST-SHA" -J -R testdata/
-          
+
           # Test implanting SHA-256 checksum
           echo "Testing implantisosha..."
-          ./bin/implantisosha test-sha.iso || echo "⚠ implantisosha not available in this build"
-          
-          # Test checking SHA-256 checksum
-          echo "Testing checkisosha..."
-          ./bin/checkisosha --md5sumonly test-sha.iso 2>/dev/null || echo "⚠ checkisosha not available in this build"
-          
+          ./bin/implantisosha test-sha.iso || { echo "⚠ implantisosha not available in this build"; exit 0; }
+          echo "✓ SHA-256 checksum implanted"
+
+          # Test checking SHA-256 checksum (new --checksumonly flag)
+          echo "Testing checkisosha --checksumonly..."
+          ./bin/checkisosha --checksumonly test-sha.iso
+          echo "✓ checkisosha --checksumonly executed"
+
+          # Test sha256 aliases
+          echo "Testing SHA-256 aliases..."
+          # Create aliases in the test working dir
+          ln -sf bin/implantisosha bin/implantisosha256 2>/dev/null || cp bin/implantisosha bin/implantisosha256
+          ln -sf bin/checkisosha bin/checkisosha256 2>/dev/null || cp bin/checkisosha bin/checkisosha256
+          chmod +x bin/implantisosha256 bin/checkisosha256
+
+          xorriso -as mkisofs -o test-sha256-alias.iso -V "TEST-SHA256" -J -R testdata/
+          ./bin/implantisosha256 test-sha256-alias.iso
+          echo "✓ implantisosha256 alias works"
+          ./bin/checkisosha256 --checksumonly test-sha256-alias.iso
+          echo "✓ checkisosha256 alias works"
+
           echo ""
           echo "All CMake tests completed! ✓"
 
@@ -247,6 +273,8 @@ jobs:
           cp build/Release/implantisomd5.exe artifacts/ || echo "implantisomd5.exe not found"
           cp build/Release/checkisosha.exe artifacts/ || echo "checkisosha.exe not found"
           cp build/Release/implantisosha.exe artifacts/ || echo "implantisosha.exe not found"
+          cp build/Release/checkisosha256.exe artifacts/ || echo "checkisosha256.exe not found"
+          cp build/Release/implantisosha256.exe artifacts/ || echo "implantisosha256.exe not found"
           cp COPYING artifacts/LICENSE.txt
           cp README artifacts/README.txt
       - name: Upload artifacts
@@ -314,25 +342,23 @@ jobs:
       - name: Test SHA executables exist
         shell: pwsh
         run: |
-          if (Test-Path "bin\checkisosha.exe") {
-            Write-Host "✓ checkisosha.exe found"
-          } else {
-            Write-Host "⚠ checkisosha.exe not found in this build"
+          $missing = $false
+          foreach ($exe in @("checkisosha.exe","implantisosha.exe","checkisosha256.exe","implantisosha256.exe")) {
+            if (Test-Path "bin\$exe") {
+              Write-Host "✓ $exe found"
+            } else {
+              Write-Host "✗ $exe NOT found"
+              $missing = $true
+            }
           }
-          if (Test-Path "bin\implantisosha.exe") {
-            Write-Host "✓ implantisosha.exe found"
-          } else {
-            Write-Host "⚠ implantisosha.exe not found in this build"
-          }
+          if ($missing) { exit 1 }
       - name: Test SHA help output
         shell: pwsh
         run: |
-          if (Test-Path "bin\checkisosha.exe") {
-            & .\bin\checkisosha.exe --help 2>&1 | Out-Null
-            Write-Host "✓ checkisosha.exe can run"
-          }
-          if (Test-Path "bin\implantisosha.exe") {
-            & .\bin\implantisosha.exe --help 2>&1 | Out-Null
-            Write-Host "✓ implantisosha.exe can run"
+          foreach ($exe in @("checkisosha.exe","implantisosha.exe","checkisosha256.exe","implantisosha256.exe")) {
+            if (Test-Path "bin\$exe") {
+              & ".\bin\$exe" --help 2>&1 | Out-Null
+              Write-Host "✓ $exe can run"
+            }
           }
           Write-Host "✓ SHA-256 Windows executables validated"

@@ -86,11 +86,13 @@ except catch_error:
 
 # check it with checkisosha - just print info, not full verification
 try:
-    result = subprocess.run(["./checkisosha", "--md5sumonly", "testiso_sha.iso"], 
+    result = subprocess.run(["./checkisosha", "--checksumonly", "testiso_sha.iso"], 
                           capture_output=True, text=True)
-    # --md5sumonly just prints info, returns 0
+    # --checksumonly just prints info, returns 0
     (rstr, pass_all) = pass_fail(result.returncode, 0, pass_all)
     print("Checking SHA-256 info -> %s" % rstr)
+    if "[SHA-256]" not in result.stdout:
+        print("  WARNING: expected [SHA-256] label in output")
 except catch_error:
     print("Checking SHA-256 info -> FAIL (tool not found)")
     pass_all = False
@@ -107,9 +109,57 @@ except catch_error:
     print("checkisomd5 reading SHA ISO -> FAIL (tool not found)")
     pass_all = False
 
+# Test sha256 aliases: implantisosha256 / checkisosha256
+print("\nTesting SHA-256 explicit aliases (implantisosha256 / checkisosha256)...")
+
+# Create a fresh ISO to test the alias implant tool
+with tempfile.TemporaryDirectory(prefix="isoshatest256-") as tmpdir256:
+    with open(tmpdir256 + "/TEST-DATA", "w") as f:
+        for x in range(0, iso_size):
+            f.write("B" * 1024)
+
+    try:
+        subprocess.check_call(["mkisofs", "-quiet", "-o", "testiso_sha256.iso", tmpdir256],
+                              stderr=subprocess.DEVNULL)
+    except catch_error:
+        subprocess.check_call(["genisoimage", "-quiet", "-o", "testiso_sha256.iso", tmpdir256],
+                              stderr=subprocess.DEVNULL)
+
+try:
+    result = subprocess.run(["./implantisosha256", "testiso_sha256.iso"],
+                           capture_output=True, text=True)
+    (rstr, pass_all) = pass_fail(result.returncode, 0, pass_all)
+    print("Implanting SHA-256 via alias -> %s" % rstr)
+except catch_error:
+    print("Implanting SHA-256 via alias -> FAIL (implantisosha256 not found)")
+    pass_all = False
+
+try:
+    result = subprocess.run(["./checkisosha256", "--checksumonly", "testiso_sha256.iso"],
+                           capture_output=True, text=True)
+    (rstr, pass_all) = pass_fail(result.returncode, 0, pass_all)
+    print("Checking SHA-256 via alias -> %s" % rstr)
+    if "[SHA-256]" not in result.stdout:
+        print("  WARNING: expected [SHA-256] label in output")
+except catch_error:
+    print("Checking SHA-256 via alias -> FAIL (checkisosha256 not found)")
+    pass_all = False
+
+# check that the --md5sumonly legacy flag still works on the alias too
+try:
+    result = subprocess.run(["./checkisosha256", "--md5sumonly", "testiso_sha256.iso"],
+                           capture_output=True, text=True)
+    (rstr, pass_all) = pass_fail(result.returncode, 0, pass_all)
+    print("checkisosha256 --md5sumonly (legacy flag) -> %s" % rstr)
+except catch_error:
+    print("checkisosha256 --md5sumonly (legacy flag) -> FAIL (tool not found)")
+    pass_all = False
+
 # clean up
 if os.path.exists("testiso_sha.iso"):
     os.unlink("testiso_sha.iso")
+if os.path.exists("testiso_sha256.iso"):
+    os.unlink("testiso_sha256.iso")
 
 if pass_all:
     print("\nAll SHA-256 tests passed!")

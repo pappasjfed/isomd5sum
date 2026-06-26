@@ -120,12 +120,53 @@ endif()
 install(FILES README COPYING docs/WINDOWS_BUILD.md WINDOWS_INSTALLER.md
         DESTINATION doc)
 
+# SHA-256 alias targets: implantisosha256 / checkisosha256
+# On Windows build copies after linking; on Unix create symlinks at install time.
+if(WIN32)
+    add_custom_command(TARGET implantisosha POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            $<TARGET_FILE:implantisosha>
+            $<TARGET_FILE_DIR:implantisosha>/implantisosha256.exe
+        COMMENT "Creating implantisosha256.exe alias"
+    )
+    add_custom_command(TARGET checkisosha POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            $<TARGET_FILE:checkisosha>
+            $<TARGET_FILE_DIR:checkisosha>/checkisosha256.exe
+        COMMENT "Creating checkisosha256.exe alias"
+    )
+    install(FILES
+        $<TARGET_FILE_DIR:implantisosha>/implantisosha256.exe
+        $<TARGET_FILE_DIR:checkisosha>/checkisosha256.exe
+        DESTINATION bin
+    )
+else()
+    install(CODE "
+        execute_process(COMMAND \${CMAKE_COMMAND} -E create_symlink
+            implantisosha
+            \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/bin/implantisosha256\"
+        )
+        execute_process(COMMAND \${CMAKE_COMMAND} -E create_symlink
+            checkisosha
+            \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/bin/checkisosha256\"
+        )
+        execute_process(COMMAND \${CMAKE_COMMAND} -E create_symlink
+            implantisosha.1
+            \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/share/man/man1/implantisosha256.1\"
+        )
+        execute_process(COMMAND \${CMAKE_COMMAND} -E create_symlink
+            checkisosha.1
+            \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/share/man/man1/checkisosha256.1\"
+        )
+    ")
+endif()
+
 # CPack configuration for Windows installer
 if(WIN32)
     set(CPACK_GENERATOR "NSIS")
     set(CPACK_PACKAGE_NAME "isomd5sum")
     set(CPACK_PACKAGE_VENDOR "isomd5sum Project")
-    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "MD5 checksum tools for ISO images")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "MD5 and SHA-256 checksum tools for ISO images")
     set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
     set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
     set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
@@ -144,7 +185,13 @@ if(WIN32)
     set(CPACK_NSIS_MODIFY_PATH ON)
     
     # Create Start Menu shortcuts
-    set(CPACK_PACKAGE_EXECUTABLES "checkisomd5;Check ISO MD5" "implantisomd5;Implant ISO MD5")
+    set(CPACK_PACKAGE_EXECUTABLES
+        "checkisomd5;Check ISO MD5"
+        "implantisomd5;Implant ISO MD5"
+        "checkisosha;Check ISO SHA-256"
+        "implantisosha;Implant ISO SHA-256"
+        "checkisosha256;Check ISO SHA-256 (alias)"
+        "implantisosha256;Implant ISO SHA-256 (alias)")
     set(CPACK_NSIS_MENU_LINKS
         "doc/README" "Read Me"
         "doc/WINDOWS_BUILD.md" "Windows Build Instructions"
