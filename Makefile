@@ -74,8 +74,13 @@ install-devel:
 	install -m 0644 libcheckisomd5.a $(DESTDIR)/usr/$(LIBDIR)
 	sed "s#@VERSION@#${VERSION}#g; s#@includedir@#/usr/include#g; s#@libdir@#/usr/${LIBDIR}#g" isomd5sum.pc.in > ${DESTDIR}/usr/share/pkgconfig/isomd5sum.pc
 
+info: isomd5sum.info
+
+isomd5sum.info: isomd5sum.texi
+	makeinfo isomd5sum.texi
+
 clean:
-	rm -f *.o *.so *.pyc *.a .depend *~
+	rm -f *.o *.so *.pyc *.a .depend *~ isomd5sum.info
 	rm -f implantisomd5 checkisomd5 implantisosha checkisosha 
 
 tag:
@@ -100,3 +105,5 @@ test-md5:
 
 test-sha:
 	$(PYTHON) ./testpyisomd5sum_sha.py
+
+.PHONY: all install install-bin install-python install-devel clean tag archive test test-md5 test-sha info

@@ -80,10 +80,72 @@ jobs:
           path: artifacts/
           retention-days: 30
 
+  build-rpm:
+    name: Build RPM Packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    container:
+      image: registry.fedoraproject.org/fedora:40
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install build dependencies
+        run: |
+          dnf install -y \
+            gcc make rpm-build popt-devel python3-devel \
+            texinfo xorriso
+      - name: Create source tarball and build RPMs
+        run: |
+          VERSION=$(grep '^Version:' isomd5sum.spec | awk '{print $2}')
+          mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+          git archive --format=tar --prefix=isomd5sum-${VERSION}/ HEAD \
+            | bzip2 > ~/rpmbuild/SOURCES/isomd5sum-${VERSION}.tar.bz2
+          cp isomd5sum.spec ~/rpmbuild/SPECS/isomd5sum.spec
+          rpmbuild -ba ~/rpmbuild/SPECS/isomd5sum.spec
+      - name: Collect RPM artifacts
+        run: |
+          mkdir -p rpms
+          find ~/rpmbuild/RPMS -name "*.rpm" -exec cp {} rpms/ \;
+          find ~/rpmbuild/SRPMS -name "*.rpm" -exec cp {} rpms/ \;
+      - name: Upload RPM artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: isomd5sum-rpms
+          path: rpms/
+          retention-days: 30
+
+  build-deb:
+    name: Build DEB Packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            debhelper devscripts dpkg-dev \
+            gcc make libpopt-dev python3-dev \
+            texinfo xorriso
+      - name: Build DEB packages
+        run: |
+          dpkg-buildpackage -us -uc -b
+      - name: Collect DEB artifacts
+        run: |
+          mkdir -p debs
+          cp ../*.deb debs/
+      - name: Upload DEB artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: isomd5sum-debs
+          path: debs/
+          retention-days: 30
+
   publish-beta-release:
     name: Publish Beta Release
     runs-on: ubuntu-latest
-    needs: [build-and-test, build-windows]
+    needs: [build-and-test, build-windows, build-rpm, build-deb]
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     permissions:
       contents: write  # Needed to create releases
@@ -102,6 +164,18 @@ jobs:
         with:
           name: isomd5sum-windows-dev
           path: ./release-windows
+
+      - name: Download RPM artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: isomd5sum-rpms
+          path: ./release-rpms
+
+      - name: Download DEB artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: isomd5sum-debs
+          path: ./release-debs
       
       - name: Generate version info
         id: version
@@ -127,11 +201,20 @@ jobs:
           cd release-windows
           zip -r ../isomd5sum-${VERSION}-windows-x64.zip .
           cd ..
+
+          # Copy RPM packages
+          cp release-rpms/*.rpm . 2>/dev/null || true
+
+          # Copy DEB packages
+          cp release-debs/*.deb . 2>/dev/null || true
           
           # Calculate checksums
           sha256sum isomd5sum-${VERSION}-linux-x64.tar.gz > checksums.txt
           sha256sum isomd5sum-${VERSION}-linux-x64.zip >> checksums.txt
           sha256sum isomd5sum-${VERSION}-windows-x64.zip >> checksums.txt
+          for f in *.rpm *.deb; do
+            [ -f "$f" ] && sha256sum "$f" >> checksums.txt || true
+          done
       
       - name: Create Beta Release
         uses: softprops/action-gh-release@v1
@@ -141,6 +224,8 @@ jobs:
           files: |
             isomd5sum-*.tar.gz
             isomd5sum-*.zip
+            *.rpm
+            *.deb
             checksums.txt
           body: |
             ## ⚠️ Beta Release (Dev Branch)
@@ -160,11 +245,24 @@ jobs:
               - `isomd5sum-*-linux-x64.zip` - Zip format (Built on Fedora 39)
             - **Windows x64 Build**: 
               - `isomd5sum-*-windows-x64.zip` - Built with Visual Studio 2022
+            - **RPM Packages** (Fedora/RHEL):
+              - `isomd5sum-*.rpm` - Main binaries + man pages
+              - `isomd5sum-devel-*.rpm` - Development headers and libraries
+              - `isomd5sum-doc-*.rpm` - GNU info manual (optional)
+              - `python3-isomd5sum-*.rpm` - Python 3 bindings
+            - **DEB Packages** (Debian/Ubuntu):
+              - `isomd5sum_*.deb` - Main binaries + man pages
+              - `isomd5sum-dev_*.deb` - Development headers and libraries
+              - `isomd5sum-doc_*.deb` - GNU info manual (optional)
             
             ### What's included
             - `checkisomd5` / `checkisomd5.exe` - Check MD5 checksums embedded in ISO images
             - `implantisomd5` / `implantisomd5.exe` - Implant MD5 checksums into ISO images
             - Documentation files
+            
+            ### Installing without documentation
+            - **RPM**: Simply omit the `isomd5sum-doc` package, or use `dnf install --setopt=tsflags=nodocs`
+            - **DEB**: Install only `isomd5sum` without `isomd5sum-doc` (docs are a separate `Suggests`)
             
             ### Checksums
             See `checksums.txt` for SHA256 checksums of the release files.

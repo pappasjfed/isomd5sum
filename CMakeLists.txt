@@ -114,6 +114,23 @@ install(FILES libimplantisomd5.h libimplantisosha.h libcheckisomd5.h
 if(NOT WIN32)
     install(FILES implantisomd5.1 checkisomd5.1 implantisosha.1 checkisosha.1
             DESTINATION share/man/man1)
+
+    # Build GNU info documentation if makeinfo is available
+    find_program(MAKEINFO makeinfo)
+    if(MAKEINFO)
+        add_custom_command(
+            OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/isomd5sum.info
+            COMMAND ${MAKEINFO} ${CMAKE_CURRENT_SOURCE_DIR}/isomd5sum.texi
+                    -o ${CMAKE_CURRENT_BINARY_DIR}/isomd5sum.info
+            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/isomd5sum.texi
+            COMMENT "Building isomd5sum GNU info documentation"
+        )
+        add_custom_target(info ALL
+            DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/isomd5sum.info)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/isomd5sum.info
+                DESTINATION share/info
+                COMPONENT Docs)
+    endif()
 endif()
 
 # Install documentation files

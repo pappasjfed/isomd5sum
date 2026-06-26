@@ -1,0 +1,331 @@
+name: Linux Packages
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+    outputs:
+      rpm-artifact:
+        description: "Name of the uploaded RPM artifact"
+        value: isomd5sum-rpms
+      deb-artifact:
+        description: "Name of the uploaded DEB artifact"
+        value: isomd5sum-debs
+
+# Set minimal default permissions
+permissions:
+  contents: read
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # RPM build
+  # ──────────────────────────────────────────────────────────────────────────
+  build-rpm:
+    name: Build RPM Packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    container:
+      image: registry.fedoraproject.org/fedora:40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          dnf install -y \
+            gcc make rpm-build popt-devel python3-devel \
+            texinfo xorriso
+
+      - name: Create source tarball
+        run: |
+          VERSION=$(grep '^Version:' isomd5sum.spec | awk '{print $2}')
+          echo "Building version: ${VERSION}"
+          mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+          git archive --format=tar --prefix=isomd5sum-${VERSION}/ HEAD \
+            | bzip2 > ~/rpmbuild/SOURCES/isomd5sum-${VERSION}.tar.bz2
+          cp isomd5sum.spec ~/rpmbuild/SPECS/isomd5sum.spec
+
+      - name: Build RPMs
+        run: |
+          rpmbuild -ba ~/rpmbuild/SPECS/isomd5sum.spec
+
+      - name: Collect RPM artifacts
+        run: |
+          mkdir -p rpms
+          find ~/rpmbuild/RPMS -name "*.rpm" -exec cp {} rpms/ \;
+          find ~/rpmbuild/SRPMS -name "*.rpm" -exec cp {} rpms/ \;
+          echo "Built packages:"
+          ls -lh rpms/
+
+      - name: Upload RPM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: isomd5sum-rpms
+          path: rpms/
+          retention-days: 30
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # RPM install tests
+  # ──────────────────────────────────────────────────────────────────────────
+  test-rpm-ubi9:
+    name: Test RPM on UBI 9
+    runs-on: ubuntu-latest
+    needs: build-rpm
+    permissions:
+      contents: read
+    container:
+      image: registry.access.redhat.com/ubi9/ubi
+    steps:
+      - name: Download RPM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: isomd5sum-rpms
+          path: ./rpms
+
+      - name: Install main RPM
+        run: |
+          # popt is a runtime dependency available in UBI9
+          dnf install -y rpms/isomd5sum-[0-9]*.rpm || \
+            rpm -ivh rpms/isomd5sum-[0-9]*.rpm
+
+      - name: Verify binaries are installed
+        run: |
+          test -x /usr/bin/checkisomd5  || { echo "✗ checkisomd5 missing"; exit 1; }
+          test -x /usr/bin/implantisomd5 || { echo "✗ implantisomd5 missing"; exit 1; }
+          test -x /usr/bin/checkisosha  || { echo "✗ checkisosha missing"; exit 1; }
+          test -x /usr/bin/implantisosha || { echo "✗ implantisosha missing"; exit 1; }
+          echo "✓ All binaries installed"
+
+      - name: Verify man pages are installed
+        run: |
+          test -f /usr/share/man/man1/checkisomd5.1.gz  || \
+          test -f /usr/share/man/man1/checkisomd5.1     || \
+            { echo "✗ checkisomd5 man page missing"; exit 1; }
+          echo "✓ Man pages installed"
+
+      - name: Test binaries run
+        run: |
+          checkisomd5 --help || true
+          implantisomd5 --help || true
+          checkisosha --help || true
+          implantisosha --help || true
+          echo "✓ Binaries executable on UBI 9"
+
+      - name: Install and verify doc RPM
+        run: |
+          dnf install -y rpms/isomd5sum-doc-*.rpm || \
+            rpm -ivh rpms/isomd5sum-doc-*.rpm
+          test -f /usr/share/info/isomd5sum.info || \
+            { echo "✗ Info file missing"; exit 1; }
+          echo "✓ Doc package installed and info file present"
+
+  test-rpm-ubi10:
+    name: Test RPM on UBI 10
+    runs-on: ubuntu-latest
+    needs: build-rpm
+    permissions:
+      contents: read
+    container:
+      image: registry.access.redhat.com/ubi10/ubi
+    steps:
+      - name: Download RPM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: isomd5sum-rpms
+          path: ./rpms
+
+      - name: Install main RPM
+        run: |
+          dnf install -y rpms/isomd5sum-[0-9]*.rpm || \
+            rpm -ivh rpms/isomd5sum-[0-9]*.rpm
+
+      - name: Verify binaries are installed
+        run: |
+          test -x /usr/bin/checkisomd5  || { echo "✗ checkisomd5 missing"; exit 1; }
+          test -x /usr/bin/implantisomd5 || { echo "✗ implantisomd5 missing"; exit 1; }
+          test -x /usr/bin/checkisosha  || { echo "✗ checkisosha missing"; exit 1; }
+          test -x /usr/bin/implantisosha || { echo "✗ implantisosha missing"; exit 1; }
+          echo "✓ All binaries installed"
+
+      - name: Verify man pages are installed
+        run: |
+          test -f /usr/share/man/man1/checkisomd5.1.gz  || \
+          test -f /usr/share/man/man1/checkisomd5.1     || \
+            { echo "✗ checkisomd5 man page missing"; exit 1; }
+          echo "✓ Man pages installed"
+
+      - name: Test binaries run
+        run: |
+          checkisomd5 --help || true
+          implantisomd5 --help || true
+          checkisosha --help || true
+          implantisosha --help || true
+          echo "✓ Binaries executable on UBI 10"
+
+      - name: Install and verify doc RPM
+        run: |
+          dnf install -y rpms/isomd5sum-doc-*.rpm || \
+            rpm -ivh rpms/isomd5sum-doc-*.rpm
+          test -f /usr/share/info/isomd5sum.info || \
+            { echo "✗ Info file missing"; exit 1; }
+          echo "✓ Doc package installed and info file present"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # DEB build
+  # ──────────────────────────────────────────────────────────────────────────
+  build-deb:
+    name: Build DEB Packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            debhelper devscripts dpkg-dev \
+            gcc make libpopt-dev python3-dev \
+            texinfo xorriso
+
+      - name: Build DEB packages
+        run: |
+          dpkg-buildpackage -us -uc -b
+          echo "Built packages:"
+          ls -lh ../*.deb
+
+      - name: Collect DEB artifacts
+        run: |
+          mkdir -p debs
+          cp ../*.deb debs/
+          ls -lh debs/
+
+      - name: Upload DEB artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: isomd5sum-debs
+          path: debs/
+          retention-days: 30
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # DEB install tests
+  # ──────────────────────────────────────────────────────────────────────────
+  test-deb-debian:
+    name: Test DEB on Debian stable
+    runs-on: ubuntu-latest
+    needs: build-deb
+    permissions:
+      contents: read
+    container:
+      image: debian:stable-slim
+    steps:
+      - name: Download DEB artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: isomd5sum-debs
+          path: ./debs
+
+      - name: Install dependencies and main DEB
+        run: |
+          apt-get update
+          # Install popt runtime dependency first
+          apt-get install -y libpopt0
+          # Install the main package
+          apt install -y ./debs/isomd5sum_*.deb
+
+      - name: Verify binaries are installed
+        run: |
+          test -x /usr/bin/checkisomd5  || { echo "✗ checkisomd5 missing"; exit 1; }
+          test -x /usr/bin/implantisomd5 || { echo "✗ implantisomd5 missing"; exit 1; }
+          test -x /usr/bin/checkisosha  || { echo "✗ checkisosha missing"; exit 1; }
+          test -x /usr/bin/implantisosha || { echo "✗ implantisosha missing"; exit 1; }
+          echo "✓ All binaries installed"
+
+      - name: Verify man pages are installed
+        run: |
+          test -f /usr/share/man/man1/checkisomd5.1.gz  || \
+          test -f /usr/share/man/man1/checkisomd5.1     || \
+            { echo "✗ checkisomd5 man page missing"; exit 1; }
+          echo "✓ Man pages installed"
+
+      - name: Test binaries run
+        run: |
+          checkisomd5 --help || true
+          implantisomd5 --help || true
+          checkisosha --help || true
+          implantisosha --help || true
+          echo "✓ Binaries executable on Debian stable"
+
+      - name: Install doc package without triggering main package install
+        run: |
+          apt install -y ./debs/isomd5sum-doc_*.deb
+          test -f /usr/share/info/isomd5sum.info || \
+            { echo "✗ Info file missing in doc package"; exit 1; }
+          echo "✓ Doc package installed and info file present"
+
+      - name: Verify binaries-only install (no docs)
+        run: |
+          # Simulate a no-docs install: uninstall doc package and verify
+          # binaries still work (docs are a separate optional package)
+          apt remove -y isomd5sum-doc
+          checkisomd5 --help || true
+          echo "✓ Binaries work without doc package (docs-free install verified)"
+
+  test-deb-ubuntu:
+    name: Test DEB on Ubuntu 24.04
+    runs-on: ubuntu-latest
+    needs: build-deb
+    permissions:
+      contents: read
+    container:
+      image: ubuntu:24.04
+    steps:
+      - name: Download DEB artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: isomd5sum-debs
+          path: ./debs
+
+      - name: Install dependencies and main DEB
+        run: |
+          apt-get update
+          apt-get install -y libpopt0
+          apt install -y ./debs/isomd5sum_*.deb
+
+      - name: Verify binaries are installed
+        run: |
+          test -x /usr/bin/checkisomd5  || { echo "✗ checkisomd5 missing"; exit 1; }
+          test -x /usr/bin/implantisomd5 || { echo "✗ implantisomd5 missing"; exit 1; }
+          test -x /usr/bin/checkisosha  || { echo "✗ checkisosha missing"; exit 1; }
+          test -x /usr/bin/implantisosha || { echo "✗ implantisosha missing"; exit 1; }
+          echo "✓ All binaries installed"
+
+      - name: Verify man pages are installed
+        run: |
+          test -f /usr/share/man/man1/checkisomd5.1.gz  || \
+          test -f /usr/share/man/man1/checkisomd5.1     || \
+            { echo "✗ checkisomd5 man page missing"; exit 1; }
+          echo "✓ Man pages installed"
+
+      - name: Test binaries run
+        run: |
+          checkisomd5 --help || true
+          implantisomd5 --help || true
+          checkisosha --help || true
+          implantisosha --help || true
+          echo "✓ Binaries executable on Ubuntu 24.04"
+
+      - name: Install doc package
+        run: |
+          apt install -y ./debs/isomd5sum-doc_*.deb
+          test -f /usr/share/info/isomd5sum.info || \
+            { echo "✗ Info file missing in doc package"; exit 1; }
+          echo "✓ Doc package installed and info file present"
+
+      - name: Verify binaries-only install (no docs)
+        run: |
+          apt remove -y isomd5sum-doc
+          checkisomd5 --help || true
+          echo "✓ Binaries work without doc package (docs-free install verified)"

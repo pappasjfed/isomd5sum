@@ -1,0 +1,378 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename isomd5sum.info
+@settitle isomd5sum Manual
+@c %**end of header
+
+@copying
+This manual is for isomd5sum (version 1.2.5), a set of tools for
+implanting and verifying MD5 and SHA-256 checksums in ISO 9660 images.
+
+Copyright @copyright{} 2003--2024 Red Hat, Inc.
+
+@quotation
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+@end quotation
+@end copying
+
+@dircategory Disk and file utilities
+@direntry
+* isomd5sum: (isomd5sum).         Tools for ISO 9660 image checksums.
+@end direntry
+
+@titlepage
+@title isomd5sum Manual
+@subtitle MD5 and SHA-256 checksum tools for ISO 9660 images
+@subtitle Version 1.2.5
+@author Red Hat, Inc.
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@contents
+
+@ifnottex
+@node Top
+@top isomd5sum
+
+This manual describes the isomd5sum tools for implanting and verifying
+MD5 and SHA-256 checksums in ISO 9660 images.
+@end ifnottex
+
+@menu
+* Introduction::          Overview and concepts.
+* implantisomd5::         Implant an MD5 checksum.
+* checkisomd5::           Verify an MD5 checksum.
+* implantisosha::         Implant a SHA-256 checksum.
+* checkisosha::           Verify a SHA-256 or MD5 checksum.
+* Examples::              Common usage examples.
+* Reporting Bugs::        How to report problems.
+* Index::                 Concept index.
+@end menu
+
+
+@node Introduction
+@chapter Introduction
+
+@cindex introduction
+@cindex overview
+
+The @command{isomd5sum} package provides four command-line tools for
+embedding and verifying integrity checksums in ISO 9660 disc images.
+These checksums are stored in the application data area of the ISO 9660
+Primary Volume Descriptor, a region unused by the standard specification.
+This means the checksum can be verified directly from the @file{.iso}
+file or from physical media without any separate checksum file.
+
+@section Tools
+
+@table @command
+@item implantisomd5
+Embeds an MD5 checksum into an ISO 9660 image.
+
+@item checkisomd5
+Reads and optionally verifies the MD5 checksum embedded by
+@command{implantisomd5}.
+
+@item implantisosha
+Embeds a SHA-256 checksum into an ISO 9660 image.  This is the
+preferred tool for new images because SHA-256 is stronger than MD5.
+
+@item checkisosha
+Reads and optionally verifies a SHA-256 or MD5 checksum.  Because it
+understands both algorithm types it can be used as a single tool for
+verifying any image produced by either implant command.
+@end table
+
+@section Checksum Storage
+
+The checksum data is stored as a null-terminated ASCII string starting
+at byte offset 883 of the ISO 9660 Primary Volume Descriptor.  The
+string contains key-value pairs including the algorithm type, the hex
+checksum, and the number of sectors covered.
+
+
+@node implantisomd5
+@chapter implantisomd5
+
+@cindex implantisomd5
+
+@section Synopsis
+
+@example
+implantisomd5 [@var{options}] @var{isofile}
+@end example
+
+@section Description
+
+@command{implantisomd5} embeds an MD5 checksum into the application
+data area of the ISO 9660 Primary Volume Descriptor of @var{isofile}.
+The image must be a valid ISO 9660 file.
+
+For new images, consider using @command{implantisosha} instead, which
+embeds a SHA-256 checksum and is considered more secure.
+
+@section Options
+
+@table @option
+@item --force
+Overwrite any existing checksum already embedded in the image.  Without
+this option, @command{implantisomd5} will refuse to modify an image that
+already contains a checksum.
+
+@item --supported-iso
+Mark the image as targeted at @dfn{supported} media (e.g., a pressed
+CD).  On Red Hat-based Anaconda installers, this flag bypasses the
+interactive prompt that asks the user to verify the disc.
+@end table
+
+@section Exit Status
+
+@table @asis
+@item 0
+The checksum was implanted successfully.
+@item 1
+An error occurred.  Typical causes include the file not being found,
+the file not being a valid ISO 9660 image, or an existing checksum
+being present without @option{--force}.
+@end table
+
+
+@node checkisomd5
+@chapter checkisomd5
+
+@cindex checkisomd5
+
+@section Synopsis
+
+@example
+checkisomd5 [@var{options}] @{@var{isofile} | @var{device}@}
+@end example
+
+@section Description
+
+@command{checkisomd5} reads the MD5 checksum embedded in @var{isofile}
+(or block @var{device}) by @command{implantisomd5} and optionally
+recomputes the checksum to verify the image's integrity.
+
+The check can be aborted by pressing the @key{Esc} key.
+
+@section Options
+
+@table @option
+@item --md5sumonly
+Do not verify the image.  Instead, print human-readable information
+about the embedded checksum (algorithm, value, and sectors covered)
+then exit.
+
+@item --verbose
+Print a human-readable progress report as the image is read and
+verified.  Without this option, no output is produced unless an error
+occurs.
+
+@item --gauge
+Print a stream of numbers from 0 to 100 representing verification
+progress.  This is suitable for piping into @command{dialog --gauge}
+to provide a user-facing progress bar.
+@end table
+
+@section Exit Status
+
+@table @asis
+@item 0
+The embedded checksum matches the image (verification passed).
+@item 1
+The checksum is missing, or the recomputed checksum does not match
+(verification failed).
+@item 2
+The check was aborted by the user.
+@end table
+
+
+@node implantisosha
+@chapter implantisosha
+
+@cindex implantisosha
+
+@section Synopsis
+
+@example
+implantisosha [@var{options}] @var{isofile}
+@end example
+
+@section Description
+
+@command{implantisosha} embeds a SHA-256 checksum into the application
+data area of the ISO 9660 Primary Volume Descriptor of @var{isofile}.
+SHA-256 provides stronger integrity guarantees than MD5 and is the
+recommended algorithm for new images.
+
+Images produced by @command{implantisosha} can be verified by both
+@command{checkisosha} and @command{checkisomd5}.
+
+@section Options
+
+@table @option
+@item --force
+Overwrite any existing checksum already embedded in the image.
+
+@item --supported-iso
+Mark the image as targeted at supported media.  On Red Hat-based
+Anaconda installers this bypasses the interactive disc-check prompt.
+@end table
+
+@section Exit Status
+
+@table @asis
+@item 0
+The checksum was implanted successfully.
+@item 1
+An error occurred.
+@end table
+
+
+@node checkisosha
+@chapter checkisosha
+
+@cindex checkisosha
+
+@section Synopsis
+
+@example
+checkisosha [@var{options}] @{@var{isofile} | @var{device}@}
+@end example
+
+@section Description
+
+@command{checkisosha} reads and optionally verifies a SHA-256 or MD5
+checksum embedded in @var{isofile} (or block @var{device}).  It
+supports checksums produced by both @command{implantisosha} and
+@command{implantisomd5}, making it suitable as a single verification
+tool for any isomd5sum-annotated image.
+
+The check can be aborted by pressing the @key{Esc} key.
+
+@section Options
+
+@table @option
+@item --md5sumonly
+Do not verify the image.  Instead, print human-readable information
+about the embedded checksum then exit.
+
+@item --verbose
+Print a human-readable progress report as the image is verified.
+
+@item --gauge
+Print a stream of numbers from 0 to 100 representing verification
+progress, suitable for piping into @command{dialog --gauge}.
+@end table
+
+@section Exit Status
+
+@table @asis
+@item 0
+Verification passed.
+@item 1
+The checksum is missing or does not match.
+@item 2
+The check was aborted by the user.
+@end table
+
+
+@node Examples
+@chapter Examples
+
+@cindex examples
+
+@section Implant and verify with MD5
+
+@example
+# Implant an MD5 checksum
+implantisomd5 myimage.iso
+
+# Verify, printing progress
+checkisomd5 --verbose myimage.iso
+
+# Display checksum info without verifying
+checkisomd5 --md5sumonly myimage.iso
+@end example
+
+@section Implant and verify with SHA-256
+
+@example
+# Implant a SHA-256 checksum (recommended for new images)
+implantisosha myimage.iso
+
+# Verify using checkisosha (supports both SHA-256 and MD5)
+checkisosha --verbose myimage.iso
+
+# Verify using checkisomd5 (also supports SHA-256 images)
+checkisomd5 --verbose myimage.iso
+@end example
+
+@section Overwrite an existing checksum
+
+@example
+implantisomd5 --force myimage.iso
+implantisosha --force myimage.iso
+@end example
+
+@section Verify a physical disc
+
+@example
+checkisomd5 /dev/sr0
+checkisosha --verbose /dev/sr0
+@end example
+
+@section Use with a dialog progress bar
+
+@example
+checkisomd5 --gauge myimage.iso | dialog --gauge "Verifying media..." 10 70 0
+@end example
+
+@section Verify as part of a shell script
+
+@example
+if checkisomd5 myimage.iso; then
+    echo "Image OK"
+else
+    echo "Image corrupted or checksum missing" >&2
+    exit 1
+fi
+@end example
+
+
+@node Reporting Bugs
+@chapter Reporting Bugs
+
+@cindex bugs, reporting
+
+Please report bugs and feature requests at:
+
+@url{https://github.com/rhinstaller/isomd5sum/issues}
+
+You may also send mail to the Anaconda development mailing list:
+@email{anaconda-devel-list@@redhat.com}
+
+When reporting a bug, please include:
+
+@itemize
+@item The version of isomd5sum (@code{checkisomd5 --version} or
+      the package version).
+@item The operating system and distribution.
+@item The command line you used and the full output.
+@item If applicable, information about the ISO file (how it was created,
+      its size, and whether it was created with another isomd5sum version).
+@end itemize
+
+
+@node Index
+@unnumbered Index
+
+@printindex cp
+
+@bye

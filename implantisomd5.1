@@ -6,13 +6,32 @@ implantisomd5 \(em implant an MD5 checksum in an ISO9660 image
 \fBimplantisomd5\fR [\fB\-\-force\fP]  [\fB\-\-supported-iso\fP]  [isofilename]
 .SH "DESCRIPTION"
 .PP
-This manual page documents briefly the \fBimplantisomd5\fR command. \fBimplantisomd5\fR is a program that embeds an MD5 checksum in an unused section of and ISO9660 (.iso) image.  This checksum can later be compared to the .iso, or a block device, using the corresponding \fBcheckisomd5\fR command.
+This manual page documents briefly the \fBimplantisomd5\fR command. \fBimplantisomd5\fR is a program that embeds an MD5 checksum in an unused section of an ISO9660 (.iso) image.  This checksum can later be compared to the .iso, or a block device, using the corresponding \fBcheckisomd5\fR command.
 .SH "OPTIONS"
 .IP "\fB\-\-force\fP" 10
 Force an existing checksum to be overwritten.
 .IP "\fB\-\-supported-iso\fP" 10
 Indicate that the image will be written to a "supported" media, such as pressed CD.  On Red Hat-based Anaconda installers, this bypasses the prompt to check the CD.
+.SH "EXIT STATUS"
+.PP
+Program returns exit status 0 if the checksum was implanted successfully, or 1 if an error occurred (for example, the file was not found, is not a valid ISO9660 image, or already contains a checksum and \fB\-\-force\fP was not specified).
+.SH "EXAMPLES"
+.TP
+Implant an MD5 checksum into an ISO image:
+.B implantisomd5 myimage.iso
+.TP
+Overwrite an existing checksum:
+.B implantisomd5 --force myimage.iso
+.TP
+Mark the image as supported media:
+.B implantisomd5 --supported-iso myimage.iso
+.SH "FILES"
+.TP
+The checksum is stored in the application data area of the ISO9660 Primary Volume Descriptor (bytes 883\(en1395), which is unused by the ISO9660 specification and therefore safe to write.
+.SH "BUGS"
+.PP
+Report bugs at \fIhttps://github.com/rhinstaller/isomd5sum/issues\fR or via the mailing list at \fIanaconda\-devel\-list@redhat.com\fR.
 .SH "SEE ALSO"
 .PP
-checkisomd5 (1).
+checkisomd5 (1), implantisosha (1), checkisosha (1).
 .\" created by instant / docbook-to-man, Thu 07 Feb 2008, 12:11
