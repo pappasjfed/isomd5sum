@@ -68,12 +68,12 @@ jobs:
             texinfo xorriso
       - name: Create source tarball and build RPMs
         run: |
-          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
           VERSION=$(grep '^Version:' isomd5sum.spec | awk '{print $2}')
           echo "Building RPMs for version: ${VERSION}"
           mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
-          git archive --format=tar --prefix=isomd5sum-${VERSION}/ HEAD \
-            | bzip2 > ~/rpmbuild/SOURCES/isomd5sum-${VERSION}.tar.bz2
+          tar --exclude='./.git' \
+            --transform "s,^\./,isomd5sum-${VERSION}/," \
+            -cjf ~/rpmbuild/SOURCES/isomd5sum-${VERSION}.tar.bz2 .
           cp isomd5sum.spec ~/rpmbuild/SPECS/isomd5sum.spec
           rpmbuild -ba ~/rpmbuild/SPECS/isomd5sum.spec
       - name: Collect RPM artifacts

@@ -39,12 +39,12 @@ jobs:
 
       - name: Create source tarball
         run: |
-          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
           VERSION=$(grep '^Version:' isomd5sum.spec | awk '{print $2}')
           echo "Building version: ${VERSION}"
           mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
-          git archive --format=tar --prefix=isomd5sum-${VERSION}/ HEAD \
-            | bzip2 > ~/rpmbuild/SOURCES/isomd5sum-${VERSION}.tar.bz2
+          tar --exclude='./.git' \
+            --transform "s,^\./,isomd5sum-${VERSION}/," \
+            -cjf ~/rpmbuild/SOURCES/isomd5sum-${VERSION}.tar.bz2 .
           cp isomd5sum.spec ~/rpmbuild/SPECS/isomd5sum.spec
 
       - name: Build RPMs
@@ -231,6 +231,10 @@ jobs:
       - name: Install dependencies and main DEB
         run: |
           apt-get update
+          # Slim/minimal container images exclude man pages via dpkg config.
+          # Remove those exclusions so we can verify man pages are installed.
+          find /etc/dpkg/dpkg.cfg.d/ -type f \
+            | xargs -r grep -l "path-exclude.*man" | xargs -r rm -f
           # Install popt runtime dependency first
           apt-get install -y libpopt0
           # Install the main package
@@ -292,6 +296,10 @@ jobs:
       - name: Install dependencies and main DEB
         run: |
           apt-get update
+          # Slim/minimal container images exclude man pages via dpkg config.
+          # Remove those exclusions so we can verify man pages are installed.
+          find /etc/dpkg/dpkg.cfg.d/ -type f \
+            | xargs -r grep -l "path-exclude.*man" | xargs -r rm -f
           apt-get install -y libpopt0
           apt install -y ./debs/isomd5sum_*.deb
 
