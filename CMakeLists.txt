@@ -154,7 +154,7 @@ if(WIN32)
         set(CPACK_NSIS_DEFINES "RequestExecutionLevel user")
         set(CPACK_NSIS_INSTALL_ROOT "$LOCALAPPDATA")
     elseif(ISOMD5SUM_NSIS_AUTO_INSTALL_SCOPE)
-        set(CPACK_NSIS_DEFINES "RequestExecutionLevel highest")
+        set(CPACK_NSIS_DEFINES "RequestExecutionLevel user")
         string(CONCAT ISOMD5SUM_NSIS_PREINSTALL_COMMANDS
             "IfSilent isomd5sum_scope_done\n"
             "StrCmp \\$SV_ALLUSERS \"JustMe\" 0 isomd5sum_scope_done\n"
