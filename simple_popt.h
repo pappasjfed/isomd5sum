@@ -51,53 +51,64 @@ static inline poptContext poptGetContext(const char *name, int argc, const char 
 }
 
 static inline int poptGetNextOpt(poptContext ctx) {
-    if (ctx->current >= ctx->argc) {
-        return -1;
-    }
-    
-    const char *arg = ctx->argv[ctx->current];
-    
-    /* Not an option or NULL */
-    if (!arg || arg[0] != '-') {
-        return -1;
-    }
-    
-    /* Check for empty option strings */
-    if (arg[1] == '\0') {
-        return -1;
-    }
-    
-    int isLong = (arg[1] == '-');
-    
-    /* Handle bare "--" */
-    if (isLong && arg[2] == '\0') {
-        return -1;
-    }
-    
-    const char *optName = isLong ? arg + 2 : arg + 1;
-    
-    /* Search for matching option */
-    for (const struct poptOption *opt = ctx->options; opt->longName || opt->shortName; opt++) {
-        int match = 0;
-        
-        if (isLong && opt->longName && strcmp(optName, opt->longName) == 0) {
-            match = 1;
-        } else if (!isLong && opt->shortName && optName[0] == opt->shortName && optName[1] == '\0') {
-            match = 1;
+    while (ctx->current < ctx->argc) {
+        const char *arg = ctx->argv[ctx->current];
+
+        /* Not an option or NULL - positional arg, stop processing options */
+        if (!arg || arg[0] != '-') {
+            return -1;
         }
-        
-        if (match) {
-            if (opt->argInfo == POPT_ARG_NONE && opt->arg) {
-                *(int *)opt->arg = 1;
-            }
+
+        /* Check for empty option strings */
+        if (arg[1] == '\0') {
+            return -1;
+        }
+
+        int isLong = (arg[1] == '-');
+
+        /* Handle bare "--" - end of options */
+        if (isLong && arg[2] == '\0') {
             ctx->current++;
-            return opt->val;
+            return -1;
+        }
+
+        const char *optName = isLong ? arg + 2 : arg + 1;
+
+        /* Search for matching option */
+        int found = 0;
+        for (const struct poptOption *opt = ctx->options; opt->longName || opt->shortName; opt++) {
+            int match = 0;
+
+            if (isLong && opt->longName && strcmp(optName, opt->longName) == 0) {
+                match = 1;
+            } else if (!isLong && opt->shortName && optName[0] == opt->shortName && optName[1] == '\0') {
+                match = 1;
+            }
+
+            if (match) {
+                if (opt->argInfo == POPT_ARG_NONE && opt->arg) {
+                    *(int *)opt->arg = 1;
+                }
+                ctx->current++;
+                found = 1;
+                /* When val != 0, return it to the caller (non-zero signals which option matched).
+                 * When val == 0, mimic real popt: handle internally and continue to the next
+                 * argument so all flags are processed before returning -1. */
+                if (opt->val != 0) {
+                    return opt->val;
+                }
+                break;
+            }
+        }
+
+        if (!found) {
+            ctx->badOption = arg;
+            ctx->current++;
+            return -2; /* Bad option */
         }
     }
-    
-    ctx->badOption = arg;
-    ctx->current++;
-    return -2;  /* Bad option */
+
+    return -1; /* No more options */
 }
 
 static inline const char **poptGetArgs(poptContext ctx) {
