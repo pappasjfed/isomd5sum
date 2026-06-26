@@ -169,7 +169,7 @@ jobs:
           fi
       
       - name: Create Beta Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: "Beta Release ${{ steps.version.outputs.version }}"
