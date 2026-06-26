@@ -92,7 +92,8 @@ static int outputCB(void *const co, const long long offset, const long long tota
 }
 
 static int usage(void) {
-    fprintf(stderr, "Usage: checkisosha [--md5sumonly] [--verbose] [--gauge] [--supported-iso] <isofilename>|<blockdevice>\n\n");
+    fprintf(stderr, "Usage: checkisosha [--checksumonly] [--verbose] [--gauge] [--supported-iso] <isofilename>|<blockdevice>\n\n");
+    fprintf(stderr, "  --checksumonly (or --md5sumonly): print embedded checksum info without verifying\n");
     return 1;
 }
 
@@ -151,11 +152,13 @@ int main(int argc, const char **argv) {
     data.gauge = 0;
 
     int md5only = 0;
+    int checksumonly = 0;
     int help = 0;
     int supported = 0;
 
     struct poptOption options[] = {
         { "md5sumonly", 'o', POPT_ARG_NONE, &md5only, 0 },
+        { "checksumonly", 'c', POPT_ARG_NONE, &checksumonly, 0 },
         { "verbose", 'v', POPT_ARG_NONE, &data.verbose, 0 },
         { "gauge", 'g', POPT_ARG_NONE, &data.gauge, 0 },
         { "supported-iso", 'S', POPT_ARG_NONE, &supported, 0 },
@@ -186,7 +189,7 @@ int main(int argc, const char **argv) {
         return usage();
     }
 
-    if (md5only | data.verbose) {
+    if ((md5only | checksumonly) | data.verbose) {
         rc = printMD5SUM(args[0]);
         if (rc < 0) {
             poptFreeContext(optCon);
@@ -194,7 +197,7 @@ int main(int argc, const char **argv) {
         }
     }
 
-    if (md5only) {
+    if (md5only | checksumonly) {
         poptFreeContext(optCon);
         return 0;
     }

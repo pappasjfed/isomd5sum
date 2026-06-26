@@ -18,7 +18,7 @@ LDFLAGS += -fPIC
 
 PYOBJS = pyisomd5sum.o libcheckisomd5.a libimplantisomd5.a
 
-all: implantisomd5 checkisomd5 implantisosha checkisosha pyisomd5sum.so libimplantisomd5.a libcheckisomd5.a libimplantisosha.a
+all: implantisomd5 checkisomd5 implantisosha checkisosha implantisosha256 checkisosha256 pyisomd5sum.so libimplantisomd5.a libcheckisomd5.a libimplantisosha.a
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -O3 -o $@ $<
@@ -34,6 +34,12 @@ checkisomd5: checkisomd5.o libcheckisomd5.a
 
 checkisosha: checkisosha.o libcheckisomd5.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) checkisosha.o libcheckisomd5.a -lpopt $(LDFLAGS) -o checkisosha
+
+implantisosha256: implantisosha
+	ln -sf implantisosha implantisosha256
+
+checkisosha256: checkisosha
+	ln -sf checkisosha checkisosha256
 
 libimplantisomd5.a: libimplantisomd5.a(libimplantisomd5.o md5.o sha256.o utilities.o)
 
@@ -53,10 +59,14 @@ install-bin:
 	install -m 0755 checkisomd5 $(DESTDIR)/usr/bin
 	install -m 0755 implantisosha $(DESTDIR)/usr/bin
 	install -m 0755 checkisosha $(DESTDIR)/usr/bin
+	ln -sf implantisosha $(DESTDIR)/usr/bin/implantisosha256
+	ln -sf checkisosha $(DESTDIR)/usr/bin/checkisosha256
 	install -m 0644 implantisomd5.1 $(DESTDIR)/usr/share/man/man1
 	install -m 0644 checkisomd5.1 $(DESTDIR)/usr/share/man/man1
 	install -m 0644 implantisosha.1 $(DESTDIR)/usr/share/man/man1
 	install -m 0644 checkisosha.1 $(DESTDIR)/usr/share/man/man1
+	ln -sf implantisosha.1 $(DESTDIR)/usr/share/man/man1/implantisosha256.1
+	ln -sf checkisosha.1 $(DESTDIR)/usr/share/man/man1/checkisosha256.1
 
 install-python:
 	install -d -m 0755 $(DESTDIR)$(PYTHONSITEPACKAGES)
@@ -76,7 +86,7 @@ install-devel:
 
 clean:
 	rm -f *.o *.so *.pyc *.a .depend *~
-	rm -f implantisomd5 checkisomd5 implantisosha checkisosha 
+	rm -f implantisomd5 checkisomd5 implantisosha checkisosha implantisosha256 checkisosha256
 
 tag:
 	@git tag -a -m "Tag as $(VERSION)" -f $(VERSION)

@@ -64,6 +64,10 @@ jobs:
           mkdir artifacts
           copy build\Release\checkisomd5.exe artifacts\
           copy build\Release\implantisomd5.exe artifacts\
+          copy build\Release\checkisosha.exe artifacts\
+          copy build\Release\implantisosha.exe artifacts\
+          copy build\Release\checkisosha256.exe artifacts\
+          copy build\Release\implantisosha256.exe artifacts\
           copy COPYING artifacts\LICENSE.txt
           copy README artifacts\README.txt
           copy docs\WINDOWS_BUILD.md artifacts\WINDOWS_BUILD.txt
@@ -112,9 +116,16 @@ jobs:
       
       - name: Test executables exist
         run: |
-          if (!(Test-Path "bin\checkisomd5.exe")) { exit 1 }
-          if (!(Test-Path "bin\implantisomd5.exe")) { exit 1 }
-          Write-Host "✓ Executables found"
+          $missing = $false
+          foreach ($exe in @("checkisomd5.exe","implantisomd5.exe","checkisosha.exe","implantisosha.exe","checkisosha256.exe","implantisosha256.exe")) {
+            if (Test-Path "bin\$exe") {
+              Write-Host "✓ $exe found"
+            } else {
+              Write-Host "✗ $exe NOT found"
+              $missing = $true
+            }
+          }
+          if ($missing) { exit 1 }
       
       - name: Test help output
         run: |
@@ -123,14 +134,19 @@ jobs:
           $output = .\checkisomd5.exe --help 2>&1 | Out-String
           Write-Host "checkisomd5 --help output:"
           Write-Host $output
-          Write-Host "Exit code: $LASTEXITCODE"
           Write-Host "✓ checkisomd5 can run"
           
           $output = .\implantisomd5.exe --help 2>&1 | Out-String
           Write-Host "implantisomd5 --help output:"
           Write-Host $output
-          Write-Host "Exit code: $LASTEXITCODE"
           Write-Host "✓ implantisomd5 can run"
+
+          # Test SHA tools
+          foreach ($exe in @("checkisosha.exe","implantisosha.exe","checkisosha256.exe","implantisosha256.exe")) {
+            $output = & ".\$exe" --help 2>&1 | Out-String
+            Write-Host "$exe --help output: $output"
+            Write-Host "✓ $exe can run"
+          }
           
           # Reset exit code for next steps
           exit 0
@@ -227,12 +243,18 @@ jobs:
         run: |
           file build-mingw/checkisomd5.exe
           file build-mingw/implantisomd5.exe
+          file build-mingw/checkisosha.exe || true
+          file build-mingw/implantisosha.exe || true
       
       - name: Prepare MinGW artifacts
         run: |
           mkdir artifacts-mingw
           cp build-mingw/checkisomd5.exe artifacts-mingw/
           cp build-mingw/implantisomd5.exe artifacts-mingw/
+          cp build-mingw/checkisosha.exe artifacts-mingw/ || true
+          cp build-mingw/implantisosha.exe artifacts-mingw/ || true
+          cp build-mingw/checkisosha256.exe artifacts-mingw/ || true
+          cp build-mingw/implantisosha256.exe artifacts-mingw/ || true
           cp COPYING artifacts-mingw/LICENSE.txt
           cp README artifacts-mingw/README.txt
           cp docs/WINDOWS_BUILD.md artifacts-mingw/WINDOWS_BUILD.txt
@@ -326,6 +348,10 @@ jobs:
             ### What's included
             - `checkisomd5.exe` - Check MD5 checksums embedded in ISO images
             - `implantisomd5.exe` - Implant MD5 checksums into ISO images
+            - `checkisosha.exe` - Check SHA-256 checksums embedded in ISO images
+            - `implantisosha.exe` - Implant SHA-256 checksums into ISO images
+            - `checkisosha256.exe` - Alias for checkisosha (explicit SHA-256 name)
+            - `implantisosha256.exe` - Alias for implantisosha (explicit SHA-256 name)
             - Documentation files
             
             ### Usage
@@ -432,6 +458,10 @@ jobs:
             ### What's included
             - `checkisomd5.exe` - Check MD5 checksums embedded in ISO images
             - `implantisomd5.exe` - Implant MD5 checksums into ISO images
+            - `checkisosha.exe` - Check SHA-256 checksums embedded in ISO images
+            - `implantisosha.exe` - Implant SHA-256 checksums into ISO images
+            - `checkisosha256.exe` - Alias for checkisosha (explicit SHA-256 name)
+            - `implantisosha256.exe` - Alias for implantisosha (explicit SHA-256 name)
             - Documentation files
             
             ### Usage

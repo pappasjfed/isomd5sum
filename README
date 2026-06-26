@@ -2,6 +2,42 @@ isomd5sum provides a way of making use of the ISO9660 application data
 area to store md5sum data about the iso.  This allows you to check the
 iso given nothing more than the iso itself.
 
+## Hash Algorithm Support
+
+isomd5sum supports both MD5 and SHA-256 checksums:
+
+### MD5 Tools (original)
+- **implantisomd5** - Embeds an MD5 checksum into an ISO image
+- **checkisomd5** - Verifies an MD5 or SHA-256 checksum embedded in an ISO image
+
+### SHA-256 Tools (recommended for new ISOs)
+- **implantisosha** - Embeds a SHA-256 checksum into an ISO image
+- **checkisosha** - Verifies a SHA-256 or MD5 checksum embedded in an ISO image
+
+SHA-256 provides significantly better collision resistance than MD5 (256-bit vs 128-bit hash).
+Both check tools auto-detect the hash type (SHA-256 or MD5) from the ISO and use the appropriate
+algorithm, so either tool can verify either type of ISO.
+
+### Quick start
+
+```bash
+# Embed SHA-256 checksum (recommended)
+implantisosha myimage.iso
+
+# Embed MD5 checksum (legacy)
+implantisomd5 myimage.iso
+
+# Verify an ISO (auto-detects hash type, prints algorithm used)
+checkisosha --checksumonly myimage.iso
+checkisomd5 --md5sumonly myimage.iso
+
+# Full verification
+checkisosha myimage.iso
+checkisomd5 myimage.iso
+```
+
+See SHA_TOOLS_README.md for more details on SHA-256 usage.
+
 ## Cross-Platform Support
 
 isomd5sum now supports Windows in addition to Linux/Unix platforms:

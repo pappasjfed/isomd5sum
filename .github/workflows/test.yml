@@ -34,6 +34,9 @@ jobs:
           cp implantisomd5 artifacts/
           cp checkisosha artifacts/
           cp implantisosha artifacts/
+          # sha256 aliases are symlinks; copy as files so they survive artifact packaging
+          cp -L implantisosha256 artifacts/implantisosha256
+          cp -L checkisosha256 artifacts/checkisosha256
           cp COPYING artifacts/LICENSE.txt
           cp README artifacts/README.txt
       - name: Upload artifacts
@@ -74,14 +77,13 @@ jobs:
           ./bin/checkisomd5 --help || true
           ./bin/implantisomd5 --help || true
           echo "✓ MD5 executables can run"
-      - name: Run Python MD5 tests
+      - name: Run MD5 implant/read executable test
         run: |
-          # Copy executables to expected location for tests
-          cp bin/checkisomd5 ./
-          cp bin/implantisomd5 ./
-          # Build Python module for testing
-          make pyisomd5sum.so
-          make test-md5
+          python3 test/create_synthetic_iso.py tiny md5_exec_test.iso
+          ./bin/implantisomd5 md5_exec_test.iso
+          md5_output="$(./bin/checkisomd5 --md5sumonly md5_exec_test.iso 2>&1)"
+          echo "$md5_output"
+          echo "$md5_output" | grep -Eq '[0-9a-fA-F]{32}'
 
   test-linux-makefile-sha:
     name: Test SHA-256 on Linux (Makefile build)
@@ -104,6 +106,7 @@ jobs:
       - name: Make executables runnable
         run: |
           chmod +x bin/checkisomd5 bin/implantisomd5 bin/checkisosha bin/implantisosha
+          chmod +x bin/implantisosha256 bin/checkisosha256 || true
       - name: Test SHA executables exist
         run: |
           test -f bin/checkisosha || exit 1
@@ -114,14 +117,13 @@ jobs:
           ./bin/checkisosha --help || true
           ./bin/implantisosha --help || true
           echo "✓ SHA executables can run"
-      - name: Run SHA-256 tests
+      - name: Run SHA implant/read executable test
         run: |
-          # Copy executables to expected location for tests
-          cp bin/checkisomd5 ./
-          cp bin/implantisomd5 ./
-          cp bin/checkisosha ./
-          cp bin/implantisosha ./
-          make test-sha
+          python3 test/create_synthetic_iso.py tiny sha_exec_test.iso
+          ./bin/implantisosha sha_exec_test.iso
+          sha_output="$(./bin/checkisosha --checksumonly sha_exec_test.iso 2>&1)"
+          echo "$sha_output"
+          echo "$sha_output" | grep -Eq '[0-9a-fA-F]{64}'
   
   build-linux-cmake:
     name: Build on Linux with CMake
@@ -147,6 +149,10 @@ jobs:
           cp build/implantisomd5 artifacts/
           cp build/checkisosha artifacts/ || echo "checkisosha not found"
           cp build/implantisosha artifacts/ || echo "implantisosha not found"
+          # sha256 aliases (created by CMake install code at build time via install rules;
+          # for artifact collection we create symlinks from the build output)
+          ln -sf implantisosha artifacts/implantisosha256 2>/dev/null || cp build/implantisosha artifacts/implantisosha256 || true
+          ln -sf checkisosha artifacts/checkisosha256 2>/dev/null || cp build/checkisosha artifacts/checkisosha256 || true
           cp COPYING artifacts/LICENSE.txt
           cp README artifacts/README.txt
       - name: Upload artifacts
@@ -212,15 +218,30 @@ jobs:
         run: |
           # Create new ISO for SHA test
           xorriso -as mkisofs -o test-sha.iso -V "TEST-SHA" -J -R testdata/
-          
+
           # Test implanting SHA-256 checksum
           echo "Testing implantisosha..."
-          ./bin/implantisosha test-sha.iso || echo "⚠ implantisosha not available in this build"
-          
-          # Test checking SHA-256 checksum
-          echo "Testing checkisosha..."
-          ./bin/checkisosha --md5sumonly test-sha.iso 2>/dev/null || echo "⚠ checkisosha not available in this build"
-          
+          ./bin/implantisosha test-sha.iso || { echo "⚠ implantisosha not available in this build"; exit 0; }
+          echo "✓ SHA-256 checksum implanted"
+
+          # Test checking SHA-256 checksum (new --checksumonly flag)
+          echo "Testing checkisosha --checksumonly..."
+          ./bin/checkisosha --checksumonly test-sha.iso
+          echo "✓ checkisosha --checksumonly executed"
+
+          # Test sha256 aliases
+          echo "Testing SHA-256 aliases..."
+          # Create aliases in the test working dir
+          ln -sf bin/implantisosha bin/implantisosha256 2>/dev/null || cp bin/implantisosha bin/implantisosha256
+          ln -sf bin/checkisosha bin/checkisosha256 2>/dev/null || cp bin/checkisosha bin/checkisosha256
+          chmod +x bin/implantisosha256 bin/checkisosha256
+
+          xorriso -as mkisofs -o test-sha256-alias.iso -V "TEST-SHA256" -J -R testdata/
+          ./bin/implantisosha256 test-sha256-alias.iso
+          echo "✓ implantisosha256 alias works"
+          ./bin/checkisosha256 --checksumonly test-sha256-alias.iso
+          echo "✓ checkisosha256 alias works"
+
           echo ""
           echo "All CMake tests completed! ✓"
 
@@ -247,6 +268,8 @@ jobs:
           cp build/Release/implantisomd5.exe artifacts/ || echo "implantisomd5.exe not found"
           cp build/Release/checkisosha.exe artifacts/ || echo "checkisosha.exe not found"
           cp build/Release/implantisosha.exe artifacts/ || echo "implantisosha.exe not found"
+          cp build/Release/checkisosha256.exe artifacts/ || echo "checkisosha256.exe not found"
+          cp build/Release/implantisosha256.exe artifacts/ || echo "implantisosha256.exe not found"
           cp COPYING artifacts/LICENSE.txt
           cp README artifacts/README.txt
       - name: Upload artifacts
@@ -287,16 +310,24 @@ jobs:
           & .\bin\checkisomd5.exe --help 2>&1 | Out-Null
           & .\bin\implantisomd5.exe --help 2>&1 | Out-Null
           Write-Host "✓ MD5 executables can run"
-      - name: Create and test MD5 ISO
+      - name: Create and test MD5 implant/read
         shell: pwsh
         run: |
-          # Create test data
-          New-Item -ItemType Directory -Force -Path testdata | Out-Null
-          "Hello from Windows MD5 test" | Out-File -FilePath testdata\test.txt
-          
-          # Note: ISO creation on Windows requires additional tools
-          # For now, we'll just verify the tools can show help
-          Write-Host "✓ MD5 Windows executables validated"
+          py -3 .\test\create_synthetic_iso.py tiny md5_exec_test.iso
+          & .\bin\implantisomd5.exe .\md5_exec_test.iso
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "✗ implantisomd5.exe failed"
+            exit 1
+          }
+
+          $output = & .\bin\checkisomd5.exe --md5sumonly .\md5_exec_test.iso 2>&1 | Out-String
+          Write-Host $output
+          if ($output -match '[0-9a-fA-F]{32}') {
+            Write-Host "✓ MD5 executable implant/read works"
+          } else {
+            Write-Host "✗ MD5 checksum not found in output"
+            exit 1
+          }
 
   test-windows-cmake-sha:
     name: Test SHA-256 on Windows (CMake build)
@@ -314,25 +345,41 @@ jobs:
       - name: Test SHA executables exist
         shell: pwsh
         run: |
-          if (Test-Path "bin\checkisosha.exe") {
-            Write-Host "✓ checkisosha.exe found"
-          } else {
-            Write-Host "⚠ checkisosha.exe not found in this build"
+          $missing = $false
+          foreach ($exe in @("checkisosha.exe","implantisosha.exe","checkisosha256.exe","implantisosha256.exe")) {
+            if (Test-Path "bin\$exe") {
+              Write-Host "✓ $exe found"
+            } else {
+              Write-Host "✗ $exe NOT found"
+              $missing = $true
+            }
           }
-          if (Test-Path "bin\implantisosha.exe") {
-            Write-Host "✓ implantisosha.exe found"
-          } else {
-            Write-Host "⚠ implantisosha.exe not found in this build"
-          }
+          if ($missing) { exit 1 }
       - name: Test SHA help output
         shell: pwsh
         run: |
-          if (Test-Path "bin\checkisosha.exe") {
-            & .\bin\checkisosha.exe --help 2>&1 | Out-Null
-            Write-Host "✓ checkisosha.exe can run"
-          }
-          if (Test-Path "bin\implantisosha.exe") {
-            & .\bin\implantisosha.exe --help 2>&1 | Out-Null
-            Write-Host "✓ implantisosha.exe can run"
+          foreach ($exe in @("checkisosha.exe","implantisosha.exe","checkisosha256.exe","implantisosha256.exe")) {
+            if (Test-Path "bin\$exe") {
+              & ".\bin\$exe" --help 2>&1 | Out-Null
+              Write-Host "✓ $exe can run"
+            }
           }
           Write-Host "✓ SHA-256 Windows executables validated"
+      - name: Create and test SHA implant/read
+        shell: pwsh
+        run: |
+          py -3 .\test\create_synthetic_iso.py tiny sha_exec_test.iso
+          & .\bin\implantisosha.exe .\sha_exec_test.iso
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "✗ implantisosha.exe failed"
+            exit 1
+          }
+
+          $output = & .\bin\checkisosha.exe --checksumonly .\sha_exec_test.iso 2>&1 | Out-String
+          Write-Host $output
+          if ($output -match '[0-9a-fA-F]{64}') {
+            Write-Host "✓ SHA executable implant/read works"
+          } else {
+            Write-Host "✗ SHA-256 checksum not found in output"
+            exit 1
+          }
