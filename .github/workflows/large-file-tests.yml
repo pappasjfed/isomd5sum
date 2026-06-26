@@ -1,10 +1,8 @@
 name: Large File Tests
 
 on:
-  push:
-    branches: [ master, develop, dev, 'copilot/**' ]
-  pull_request:
-    branches: [ master, dev ]
+  push:  # Triggers on all branches
+  pull_request:  # Triggers on all branches
   workflow_dispatch:
 
 permissions:
@@ -17,7 +15,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       
       - name: Install dependencies
         run: |
@@ -39,7 +37,7 @@ jobs:
           ./test_cross_platform.sh --create --large --verbose
       
       - name: Upload Linux test ISOs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-test-isos
           path: test/cross_platform/
@@ -51,7 +49,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       
       - name: Set up CMake
         uses: lukka/get-cmake@latest
@@ -75,7 +73,7 @@ jobs:
           ./test_cross_platform.sh --create --large --verbose --tools-dir ../build/Release
       
       - name: Upload Windows test ISOs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-test-isos
           path: test/cross_platform/
@@ -88,13 +86,13 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       
       - name: Set up CMake
         uses: lukka/get-cmake@latest
       
       - name: Download Linux test ISOs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: linux-test-isos
           path: test/cross_platform
@@ -162,7 +160,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       
       - name: Install dependencies
         run: |
@@ -174,7 +172,7 @@ jobs:
           make checkisomd5
       
       - name: Download Windows test ISOs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: windows-test-isos
           path: test/cross_platform

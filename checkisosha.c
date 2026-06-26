@@ -174,7 +174,8 @@ int main(int argc, const char **argv) {
 
     if (help) {
         poptFreeContext(optCon);
-        return usage();
+        usage();
+        return 0;
     }
 
     const char **args = poptGetArgs(optCon);
