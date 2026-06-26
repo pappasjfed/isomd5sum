@@ -64,10 +64,11 @@ jobs:
       - name: Install build dependencies
         run: |
           dnf install -y \
-            gcc make rpm-build popt-devel python3-devel \
+            git gcc make rpm-build popt-devel python3-devel \
             texinfo xorriso
       - name: Create source tarball and build RPMs
         run: |
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
           VERSION=$(grep '^Version:' isomd5sum.spec | awk '{print $2}')
           echo "Building RPMs for version: ${VERSION}"
           mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
@@ -230,7 +231,7 @@ jobs:
           ls -lh
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: "isomd5sum ${{ steps.version.outputs.tag }}"

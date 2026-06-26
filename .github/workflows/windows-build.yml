@@ -20,7 +20,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
       
       - name: Set up CMake
         uses: lukka/get-cmake@latest
@@ -81,7 +81,7 @@ jobs:
           }
       
       - name: Upload artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: isomd5sum-windows-x64
           path: artifacts/
@@ -96,7 +96,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           lfs: true
       
@@ -107,7 +107,7 @@ jobs:
           Write-Host "✓ Test assets retrieved"
       
       - name: Download artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           name: isomd5sum-windows-x64
           path: ./bin
@@ -211,7 +211,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
       
       - name: Install MinGW
         run: |
@@ -240,7 +240,7 @@ jobs:
           cp docs/WINDOWS_BUILD.md artifacts-mingw/WINDOWS_BUILD.txt
       
       - name: Upload MinGW artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: isomd5sum-windows-x64-mingw
           path: artifacts-mingw/
@@ -256,16 +256,16 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
       
       - name: Download MSVC artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           name: isomd5sum-windows-x64
           path: ./release-msvc
       
       - name: Download MinGW artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           name: isomd5sum-windows-x64-mingw
           path: ./release-mingw
@@ -308,7 +308,7 @@ jobs:
           fi
       
       - name: Create Pre-release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: "Pre-release ${{ steps.version.outputs.version }}"
