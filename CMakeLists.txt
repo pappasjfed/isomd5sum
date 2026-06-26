@@ -122,6 +122,10 @@ install(FILES README COPYING docs/WINDOWS_BUILD.md WINDOWS_INSTALLER.md
 
 # CPack configuration for Windows installer
 if(WIN32)
+    option(ISOMD5SUM_NSIS_USER_INSTALL
+           "Build NSIS installer for current-user installation (default is system-wide)"
+           OFF)
+
     set(CPACK_GENERATOR "NSIS")
     set(CPACK_PACKAGE_NAME "isomd5sum")
     set(CPACK_PACKAGE_VENDOR "isomd5sum Project")
@@ -142,6 +146,9 @@ if(WIN32)
     set(CPACK_NSIS_CONTACT "anaconda-devel-list@redhat.com")
     set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
     set(CPACK_NSIS_MODIFY_PATH ON)
+    if(ISOMD5SUM_NSIS_USER_INSTALL)
+        set(CPACK_NSIS_INSTALL_ROOT "$LOCALAPPDATA")
+    endif()
     
     # Create Start Menu shortcuts
     set(CPACK_PACKAGE_EXECUTABLES "checkisomd5;Check ISO MD5" "implantisomd5;Implant ISO MD5")

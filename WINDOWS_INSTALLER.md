@@ -36,11 +36,19 @@ For a quick and easy build, use the provided PowerShell script:
 .\build-windows-installer.ps1
 ```
 
+To build a user-only installer (installs under the current user's profile), use:
+
+```powershell
+.\build-windows-installer.ps1 -UserOnly
+```
+
 This script will:
 - Check for all required tools (CMake, NSIS, Visual Studio/MinGW)
 - Configure and build the project
 - Create the installer automatically
 - Display the installer location and size
+
+By default, the script builds a system-level installer. Pass `-UserOnly` to build a current-user installer.
 
 ### Manual Build with Visual Studio
 

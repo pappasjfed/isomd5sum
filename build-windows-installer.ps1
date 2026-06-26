@@ -1,6 +1,10 @@
 # Windows Installer Build and Test Script
 # This script helps build and validate the Windows installer locally
 
+param(
+    [switch]$UserOnly
+)
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "isomd5sum Windows Installer Build Script" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
@@ -41,6 +45,14 @@ Write-Host ""
 Write-Host "Building Windows installer..." -ForegroundColor Yellow
 Write-Host ""
 
+$cmakeInstallerScopeArg = if ($UserOnly) {
+    Write-Host "Installer scope: current user only" -ForegroundColor Yellow
+    "-DISOMD5SUM_NSIS_USER_INSTALL=ON"
+} else {
+    Write-Host "Installer scope: system-wide (default)" -ForegroundColor Yellow
+    "-DISOMD5SUM_NSIS_USER_INSTALL=OFF"
+}
+
 # Create build directory
 $buildDir = "build-installer"
 if (Test-Path $buildDir) {
@@ -54,20 +66,20 @@ Set-Location $buildDir
 # Configure with CMake
 Write-Host "Configuring with CMake..." -ForegroundColor Yellow
 try {
-    cmake -G "Visual Studio 17 2022" -A x64 ..
+    cmake -G "Visual Studio 17 2022" -A x64 $cmakeInstallerScopeArg ..
     if ($LASTEXITCODE -ne 0) {
         throw "CMake configuration failed"
     }
 } catch {
     Write-Host "Visual Studio 17 not found, trying Visual Studio 16..." -ForegroundColor Yellow
     try {
-        cmake -G "Visual Studio 16 2019" -A x64 ..
+        cmake -G "Visual Studio 16 2019" -A x64 $cmakeInstallerScopeArg ..
         if ($LASTEXITCODE -ne 0) {
             throw "CMake configuration failed"
         }
     } catch {
         Write-Host "Visual Studio build failed, trying MinGW..." -ForegroundColor Yellow
-        cmake -G "MinGW Makefiles" ..
+        cmake -G "MinGW Makefiles" $cmakeInstallerScopeArg ..
         if ($LASTEXITCODE -ne 0) {
             Write-Host "❌ CMake configuration failed" -ForegroundColor Red
             Set-Location ..
