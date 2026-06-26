@@ -69,7 +69,7 @@ jobs:
           copy COPYING artifacts\LICENSE.txt
           copy README artifacts\README.txt
           copy docs\WINDOWS_BUILD.md artifacts\WINDOWS_BUILD.txt
-          copy WINDOWS_INSTALLER.md artifacts\WINDOWS_INSTALLER.txt
+          copy docs\WINDOWS_INSTALLER.md artifacts\WINDOWS_INSTALLER.txt
           
           # Copy installer if it exists
           $installer = Get-ChildItem -Path build -Filter "isomd5sum-*-win64.exe" | Select-Object -First 1

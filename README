@@ -10,7 +10,7 @@ isomd5sum now supports Windows in addition to Linux/Unix platforms:
 - Build native Windows executables (.exe)
 - Windows installer available for easy installation with automatic PATH configuration
 
-See WINDOWS_BUILD.md for Windows build instructions and WINDOWS_INSTALLER.md for Windows installer details.
+See docs/WINDOWS_BUILD.md for Windows build instructions and docs/WINDOWS_INSTALLER.md for Windows installer details.
 
 ## Building
 
