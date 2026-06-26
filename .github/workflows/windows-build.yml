@@ -2,8 +2,6 @@ name: Windows Build and Release
 
 on:
   push:  # Triggers on all branches
-    tags:
-      - 'v*'
   pull_request:  # Triggers on all branches
   workflow_dispatch:
 

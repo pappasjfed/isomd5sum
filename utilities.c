@@ -61,7 +61,7 @@ static unsigned char *read_primary_volume_descriptor(const int fd, int64_t *cons
             aligned_free(sector_buffer);
             return NULL;
         }
-        nbyte *= SECTOR_SIZE;
+        nbyte += SECTOR_SIZE;
     }
     *offset = nbyte;
     return sector_buffer;

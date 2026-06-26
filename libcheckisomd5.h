@@ -19,6 +19,7 @@ typedef int (*checkCallback)(void *, long long offset, long long total);
 int mediaCheckFile(const char *file, checkCallback cb, void *cbdata);
 int mediaCheckFD(int isofd, checkCallback cb, void *cbdata);
 int printMD5SUM(const char *file);
+int isSupportedFile(const char *file);
 
 #ifdef __cplusplus
 }
