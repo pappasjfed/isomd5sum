@@ -2,11 +2,17 @@
 
 This document describes how to build the isomd5sum tools for Windows.
 
-## Pre-built Binaries
+## Pre-built Binaries and Installer
 
-Pre-built Windows executables are available from the GitHub Releases page:
+Pre-built Windows executables and installers are available from the GitHub Releases page:
 https://github.com/pappasjfed/isomd5sum/releases
 
+### Windows Installer (Recommended)
+- `isomd5sum-*-win64.exe` - Windows installer that automatically installs executables and adds them to PATH
+
+For detailed installer information, see [WINDOWS_INSTALLER.md](WINDOWS_INSTALLER.md).
+
+### Portable Executables
 Download the appropriate zip file:
 - `isomd5sum-*-windows-x64-msvc.zip` - Built with Visual Studio (recommended)
 - `isomd5sum-*-windows-x64-mingw.zip` - Built with MinGW-w64 (alternative)
@@ -56,6 +62,23 @@ mingw32-make
 ```
 
 The executables will be in the `build` directory.
+
+### Building the Windows Installer
+
+To build a Windows installer (.exe) that automatically installs the executables and adds them to PATH:
+
+1. Install **NSIS** (Nullsoft Scriptable Install System) from https://nsis.sourceforge.io/Download
+2. Follow the build steps above for either Visual Studio or MinGW
+3. After building, create the installer:
+
+```cmd
+cd build
+cpack -C Release
+```
+
+The installer will be created as `isomd5sum-<version>-win64.exe` in the build directory.
+
+For detailed information about the installer, see [WINDOWS_INSTALLER.md](WINDOWS_INSTALLER.md).
 
 ## Cross-Compilation from Linux
 

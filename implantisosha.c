@@ -1,5 +1,5 @@
 /*
- * simple program to insert an md5sum into application data area of iso99660
+ * simple program to insert a SHA-256 sum into application data area of iso9660
  * Copyright (C) 2001-2013 Red Hat, Inc.
  * Michael Fulbright <msf@redhat.com>
  *
@@ -27,11 +27,11 @@
 #include <popt.h>
 #endif
 
-#include "md5.h"
-#include "libimplantisomd5.h"
+#include "sha256.h"
+#include "libimplantisosha.h"
 
 static int usage(void) {
-    fprintf(stderr, "implantisomd5:         implantisomd5 [--force] [--supported-iso] <isofilename>\n");
+    fprintf(stderr, "implantisosha:         implantisosha [--force] [--supported-iso] <isofilename>\n");
     return 1;
 }
 
@@ -49,7 +49,7 @@ int main(int argc, const char **argv) {
         { 0, 0, 0, 0, 0 }
     };
 
-    poptContext optCon = poptGetContext("implantisomd5", argc, argv, options, 0);
+    poptContext optCon = poptGetContext("implantisosha", argc, argv, options, 0);
 
     int rc;
     if ((rc = poptGetNextOpt(optCon)) < -1) {
@@ -72,7 +72,7 @@ int main(int argc, const char **argv) {
         return usage();
     }
 
-    rc = implantISOFile(args[0], supported, forceit, 0, &errstr);
+    rc = implantISOSHAFile(args[0], supported, forceit, 0, &errstr);
     if (rc) {
         fprintf(stderr, "ERROR: ");
         fprintf(stderr, errstr, args[0]);

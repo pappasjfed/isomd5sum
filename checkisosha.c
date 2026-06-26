@@ -1,5 +1,5 @@
 /*
- * checkosmd5 - simple program to check implanted md5sum
+ * checkisosha - simple program to check implanted SHA-256 sum (and MD5 for compatibility)
  * Copyright (C) 2001-2013 Red Hat, Inc.
  * Michael Fulbright <msf@redhat.com>
  *
@@ -32,7 +32,7 @@
 #include <termios.h>
 #endif
 
-#include "md5.h"
+#include "sha256.h"
 #include "libcheckisomd5.h"
 
 struct progressCBData {
@@ -92,7 +92,7 @@ static int outputCB(void *const co, const long long offset, const long long tota
 }
 
 static int usage(void) {
-    fprintf(stderr, "Usage: checkisomd5 [--md5sumonly] [--verbose] [--gauge] <isofilename>|<blockdevice>\n\n");
+    fprintf(stderr, "Usage: checkisosha [--md5sumonly] [--verbose] [--gauge] <isofilename>|<blockdevice>\n\n");
     return 1;
 }
 
@@ -126,7 +126,7 @@ int processExitStatus(const int rc) {
             exit_rc = 0;
             break;
         default:
-            result = "checkisomd5 ERROR - bad return value";
+            result = "checkisosha ERROR - bad return value";
             exit_rc = 1;
             break;
     }
@@ -161,7 +161,7 @@ int main(int argc, const char **argv) {
         { 0, 0, 0, 0, 0 }
     };
 
-    poptContext optCon = poptGetContext("checkisomd5", argc, argv, options, 0);
+    poptContext optCon = poptGetContext("checkisosha", argc, argv, options, 0);
 
     int rc = poptGetNextOpt(optCon);
     if (rc < -1) {

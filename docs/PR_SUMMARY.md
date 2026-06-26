@@ -26,7 +26,7 @@ Replace all `off_t` usage with C99 standard `int64_t`, which is guaranteed 64-bi
 5. **checkisomd5.c** - Fixed progress display overflow
 
 ### Documentation (1 file)
-6. **WINDOWS_PORTING.md** - Complete porting guide (NEW)
+6. **docs/WINDOWS_PORTING.md** - Complete porting guide (NEW)
 
 ## Key Changes
 
@@ -127,7 +127,7 @@ No changes to ISO MD5 sum format.
 
 ### What to Include
 - ✅ All core file changes (utilities.*, lib*.c, checkisomd5.c)
-- ✅ WINDOWS_PORTING.md documentation
+- ✅ docs/WINDOWS_PORTING.md documentation
 - ✅ This PR summary
 
 ### What to Exclude
