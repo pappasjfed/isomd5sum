@@ -20,7 +20,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7
       
       - name: Set up CMake
         uses: lukka/get-cmake@latest
@@ -81,7 +81,7 @@ jobs:
           }
       
       - name: Upload artifacts
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7
         with:
           name: isomd5sum-windows-x64
           path: artifacts/
@@ -96,7 +96,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7
         with:
           lfs: true
       
@@ -107,7 +107,7 @@ jobs:
           Write-Host "✓ Test assets retrieved"
       
       - name: Download artifacts
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8
         with:
           name: isomd5sum-windows-x64
           path: ./bin
@@ -211,7 +211,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7
       
       - name: Install MinGW
         run: |
@@ -240,7 +240,7 @@ jobs:
           cp docs/WINDOWS_BUILD.md artifacts-mingw/WINDOWS_BUILD.txt
       
       - name: Upload MinGW artifacts
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7
         with:
           name: isomd5sum-windows-x64-mingw
           path: artifacts-mingw/
@@ -256,16 +256,16 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7
       
       - name: Download MSVC artifacts
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8
         with:
           name: isomd5sum-windows-x64
           path: ./release-msvc
       
       - name: Download MinGW artifacts
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8
         with:
           name: isomd5sum-windows-x64-mingw
           path: ./release-mingw
@@ -350,16 +350,16 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7
       
       - name: Download MSVC artifacts
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8
         with:
           name: isomd5sum-windows-x64
           path: ./release-msvc
       
       - name: Download MinGW artifacts
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8
         with:
           name: isomd5sum-windows-x64-mingw
           path: ./release-mingw
