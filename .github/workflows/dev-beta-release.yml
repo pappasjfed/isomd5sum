@@ -84,7 +84,7 @@ jobs:
     name: Publish Beta Release
     runs-on: ubuntu-latest
     needs: [build-and-test, build-windows]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'  # Only run on push to develop branch
     permissions:
       contents: write  # Needed to create releases
     steps:
