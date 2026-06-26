@@ -92,7 +92,7 @@ static int outputCB(void *const co, const long long offset, const long long tota
 }
 
 static int usage(void) {
-    fprintf(stderr, "Usage: checkisosha [--md5sumonly] [--verbose] [--gauge] <isofilename>|<blockdevice>\n\n");
+    fprintf(stderr, "Usage: checkisosha [--md5sumonly] [--verbose] [--gauge] [--supported-iso] <isofilename>|<blockdevice>\n\n");
     return 1;
 }
 
@@ -152,11 +152,13 @@ int main(int argc, const char **argv) {
 
     int md5only = 0;
     int help = 0;
+    int supported = 0;
 
     struct poptOption options[] = {
         { "md5sumonly", 'o', POPT_ARG_NONE, &md5only, 0 },
         { "verbose", 'v', POPT_ARG_NONE, &data.verbose, 0 },
         { "gauge", 'g', POPT_ARG_NONE, &data.gauge, 0 },
+        { "supported-iso", 'S', POPT_ARG_NONE, &supported, 0 },
         { "help", 'h', POPT_ARG_NONE, &help, 0 },
         { 0, 0, 0, 0, 0 }
     };
@@ -219,5 +221,12 @@ int main(int argc, const char **argv) {
     }
 
     poptFreeContext(optCon);
-    return processExitStatus(rc);
+    int exit_rc = processExitStatus(rc);
+    if (exit_rc == 0 && supported) {
+        if (isSupportedFile(args[0]) != 1) {
+            fprintf(stderr, "This is not a supported ISO.\n");
+            return 1;
+        }
+    }
+    return exit_rc;
 }
