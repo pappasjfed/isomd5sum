@@ -110,5 +110,5 @@ fi
 %{python3_sitearch}/pyisomd5sum.so
 
 %changelog
-* Thu Jan 01 2024 isomd5sum Maintainers <anaconda-devel-list@redhat.com> - 1.2.5-1
+* Mon Jan 01 2024 isomd5sum Maintainers <anaconda-devel-list@redhat.com> - 1.2.5-1
 - Initial RPM packaging
