@@ -66,7 +66,7 @@ the isomd5sum libraries to Python scripts.
 %make_build info
 
 %install
-%make_install
+%make_install PYTHONSITEPACKAGES=%{python3_sitearch}
 install -d -m 0755 %{buildroot}%{_infodir}
 install -m 0644 isomd5sum.info %{buildroot}%{_infodir}/isomd5sum.info
 
