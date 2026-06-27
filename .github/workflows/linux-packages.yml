@@ -55,7 +55,11 @@ jobs:
         run: |
           mkdir -p rpms
           find ~/rpmbuild/RPMS -name "*.rpm" -exec cp {} rpms/ \;
-          find ~/rpmbuild/SRPMS -name "*.rpm" -exec cp {} rpms/ \;
+          # Keep source RPM in a subdirectory so it is preserved as an artifact
+          # but does NOT match the "isomd5sum-[0-9]*.rpm" glob used in install
+          # test steps (DNF rejects src packages when given as install targets).
+          mkdir -p rpms/src
+          find ~/rpmbuild/SRPMS -name "*.rpm" -exec cp {} rpms/src/ \;
           echo "Built packages:"
           ls -lh rpms/
 

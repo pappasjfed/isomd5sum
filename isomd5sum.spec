@@ -11,7 +11,6 @@ BuildRequires:  make
 BuildRequires:  popt-devel
 BuildRequires:  python3-devel
 BuildRequires:  texinfo
-BuildRequires:  xorriso
 
 %description
 isomd5sum provides tools to implant and verify MD5 or SHA-256 checksums
