@@ -3,7 +3,7 @@ Version: 1.2.5
 Architecture: amd64
 Maintainer: isomd5sum Maintainers <anaconda-devel-list@redhat.com>
 Installed-Size: 99
-Depends: libc6 (>= 2.38), libpopt0 (>= 1.14)
+Depends: libc6 (>= 2.34), libpopt0 (>= 1.14)
 Suggests: isomd5sum-doc
 Section: utils
 Priority: optional
