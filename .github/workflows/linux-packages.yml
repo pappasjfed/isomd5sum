@@ -27,12 +27,14 @@ jobs:
     permissions:
       contents: read
     container:
-      image: registry.fedoraproject.org/fedora:40
+      image: almalinux:9
     steps:
       - uses: actions/checkout@v6
 
       - name: Install build dependencies
         run: |
+          dnf install -y dnf-plugins-core
+          dnf config-manager --enable crb
           dnf install -y \
             git gcc make rpm-build popt-devel python3-devel \
             texinfo xorriso
