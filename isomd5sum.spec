@@ -10,6 +10,7 @@ BuildRequires:  gcc
 BuildRequires:  make
 BuildRequires:  popt-devel
 BuildRequires:  python3-devel
+BuildRequires:  python3-rpm-macros
 BuildRequires:  texinfo
 
 %description

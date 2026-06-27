@@ -36,7 +36,7 @@ jobs:
           dnf install -y dnf-plugins-core
           dnf config-manager --enable crb
           dnf install -y \
-            git gcc make rpm-build popt-devel python3-devel \
+            git gcc make rpm-build popt-devel python3-devel python3-rpm-macros \
             texinfo xorriso
 
       - name: Create source tarball
