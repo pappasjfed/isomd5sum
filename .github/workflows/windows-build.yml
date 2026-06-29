@@ -131,12 +131,22 @@ jobs:
           Write-Host "Installer path validated: ${{ env.INSTALLER_PATH }}"
 
       - name: Sign Installer file
-        uses: Encryption-Consulting-LLC/CodeSigning-Action@v1
-        with:
-          file-path: '${{ env.INSTALLER_PATH }}'
-          cert-path: 'cert.pfx'
-          key-container: 'mykeycontainer'
-          timestamp-server: 'http://timestamp.sectigo.com'
+        shell: pwsh
+        run: |
+          $pfxPassword = "${{ secrets.CODE_SIGN_CERT_PASS }}"
+          if ([string]::IsNullOrWhiteSpace($pfxPassword)) {
+            Write-Error "CODE_SIGN_CERT_PASS is empty or not configured."
+            exit 1
+          }
+
+          $signtool = Get-Command signtool -ErrorAction SilentlyContinue
+          if (-not $signtool) {
+            Write-Error "signtool is not available in PATH."
+            exit 1
+          }
+
+          Write-Host "Signing installer: ${{ env.INSTALLER_PATH }}"
+          & $signtool.Source sign /fd SHA256 /f "cert.pfx" /p "$pfxPassword" /tr "http://timestamp.sectigo.com" /td SHA256 "${{ env.INSTALLER_PATH }}"
 
       - name: Delete certificate
         run: del -Force -verbose cert.pfx
