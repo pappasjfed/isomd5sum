@@ -58,16 +58,17 @@ jobs:
           cpack -C Release -G NSIS
           
           # List generated files
-          Write-Host "Generated installer files:"
-          Get-ChildItem -Filter "*.exe" | ForEach-Object { Write-Host $_.Name }
+          $INSTALLER_NAME = $((Get-ChildItem -Filter "*.exe" | Select-Object -First 1).Name)
+          Write-Host "Installer file: $INSTALLER_NAME"
+          echo INSTALLER_NAME=$INSTALLER_NAME >> $GITHUB_ENV
 
       - name: Decode certificate
-        run: echo "${{ secrets.CODE_SIGN_CERT_PAPPASJ }}" | base64 -d > cert.pfx
+        run: echo '${{ secrets.CODE_SIGN_CERT_PAPPASJ }}' | base64 -d > cert.pfx
 
       - name: Sign Installer file
         uses: Encryption-Consulting-LLC/CodeSigning-Action@v1
         with:
-          file-path: 'build/*.exe'
+          file-path: 'build/${{ env.INSTALLER_NAME }}'
           cert-path: 'cert.pfx'
           key-container: 'mykeycontainer'
           timestamp-server: 'http://timestamp.sectigo.com'
