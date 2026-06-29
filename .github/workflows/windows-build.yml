@@ -57,10 +57,56 @@ jobs:
           cd build
           cpack -C Release -G NSIS
           
-          # List generated files
-          $INSTALLER_NAME = $((Get-ChildItem -Filter "*.exe" | Select-Object -First 1).Name)
+          # Resolve installer deterministically and export both name and full path for later steps.
+          $installer = Get-ChildItem -Path . -Filter "isomd5sum-*-win64.exe" -File |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+
+          if (-not $installer) {
+            Write-Error "Installer not found in build directory (expected pattern: isomd5sum-*-win64.exe)."
+            exit 1
+          }
+
+          $INSTALLER_NAME = $installer.Name
+          $INSTALLER_PATH = $installer.FullName
+
           Write-Host "Installer file: $INSTALLER_NAME"
-          echo INSTALLER_NAME=$INSTALLER_NAME >> $GITHUB_ENV
+          Write-Host "Installer path: $INSTALLER_PATH"
+          echo "INSTALLER_NAME=$INSTALLER_NAME" >> $env:GITHUB_ENV
+          echo "INSTALLER_PATH=$INSTALLER_PATH" >> $env:GITHUB_ENV
+
+      - name: Install Windows SDK signing tools
+        shell: pwsh
+        run: |
+          $signtool = Get-Command signtool -ErrorAction SilentlyContinue
+          if (-not $signtool) {
+            Write-Host "signtool not found in PATH; installing Windows SDK Signing Tools..."
+            Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2196241" -OutFile "$env:RUNNER_TEMP\winsdksetup.exe"
+            Start-Process -FilePath "$env:RUNNER_TEMP\winsdksetup.exe" -ArgumentList "/features OptionId.SigningTools /quiet /norestart" -Wait
+          }
+
+          $signtoolPath = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match "\\x64\\" } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+
+          if (-not $signtoolPath) {
+            $signtoolPath = Get-Command signtool -ErrorAction SilentlyContinue
+          }
+
+          if (-not $signtoolPath) {
+            Write-Error "signtool.exe not found after Windows SDK signing tools installation."
+            exit 1
+          }
+
+          $signtoolBin = if ($signtoolPath -is [System.Management.Automation.CommandInfo]) {
+            Split-Path $signtoolPath.Source -Parent
+          } else {
+            Split-Path $signtoolPath.FullName -Parent
+          }
+
+          Write-Host "signtool path: $signtoolBin"
+          $signtoolBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Decode certificate
         shell: pwsh
@@ -69,10 +115,25 @@ jobs:
           [IO.File]::WriteAllBytes("cert.pfx", [Convert]::FromBase64String($b64))
           Write-Host "Certificate decoded successfully"
 
+      - name: Validate installer path for signing
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace("${{ env.INSTALLER_PATH }}")) {
+            Write-Error "INSTALLER_PATH is empty."
+            exit 1
+          }
+
+          if (!(Test-Path "${{ env.INSTALLER_PATH }}" -PathType Leaf)) {
+            Write-Error "Installer file not found: ${{ env.INSTALLER_PATH }}"
+            exit 1
+          }
+
+          Write-Host "Installer path validated: ${{ env.INSTALLER_PATH }}"
+
       - name: Sign Installer file
         uses: Encryption-Consulting-LLC/CodeSigning-Action@v1
         with:
-          file-path: 'build/${{ env.INSTALLER_NAME }}'
+          file-path: '${{ env.INSTALLER_PATH }}'
           cert-path: 'cert.pfx'
           key-container: 'mykeycontainer'
           timestamp-server: 'http://timestamp.sectigo.com'
