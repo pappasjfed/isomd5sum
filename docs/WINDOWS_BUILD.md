@@ -107,6 +107,8 @@ make
 checkisomd5.exe --verbose myiso.iso
 ```
 
+Use `--verbose` for checksum details and human-readable progress, or `--gauge` for machine-readable progress values from 0 to 100.
+
 ### Checking a Physical CD/DVD Drive
 
 On Windows, you can check physical media by using the device path:

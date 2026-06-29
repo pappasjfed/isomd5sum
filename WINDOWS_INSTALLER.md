@@ -164,6 +164,8 @@ checkisomd5 --verbose \\.\D:
 implantisomd5 myiso.iso
 ```
 
+Use `--verbose` for checksum details and human-readable progress, or `--gauge` for machine-readable progress values from 0 to 100.
+
 ### Start Menu
 
 The installer creates a program group in the Start Menu with:

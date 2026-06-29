@@ -51,9 +51,10 @@ implantisomd5.exe --force myimage.iso
 
 ### checkisomd5
 
-- `--verbose` or `-v` - Show progress during checking
+- `--verbose` or `-v` - Show checksum details and human-readable progress during checking
 - `--md5sumonly` or `-o` - Only print the checksum, don't verify
-- `--gauge` or `-g` - Output progress as percentage (for scripts)
+- `--gauge` or `-g` - Output machine-readable progress as integer values from 0 to 100
+- `--supported-iso` or `-S` - After a successful checksum check, also require the ISO to be marked as supported
 - `--help` or `-h` - Show help message
 
 ### implantisomd5

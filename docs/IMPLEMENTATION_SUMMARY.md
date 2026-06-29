@@ -98,6 +98,7 @@ Port the isomd5sum tools (checkisomd5 and implantisomd5) to Windows, enabling us
    ```cmd
    checkisomd5.exe --verbose myimage.iso
    ```
+   Use `--verbose` for checksum details and human-readable progress, or `--gauge` for machine-readable progress values from 0 to 100.
 
 3. **Check Physical Media:**
    ```cmd
