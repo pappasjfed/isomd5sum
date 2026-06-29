@@ -63,7 +63,11 @@ jobs:
           echo INSTALLER_NAME=$INSTALLER_NAME >> $GITHUB_ENV
 
       - name: Decode certificate
-        run: echo '${{ secrets.CODE_SIGN_CERT_PAPPASJ }}' | base64 -d > cert.pfx
+        shell: pwsh
+        run: |
+          $b64 = "${{ secrets.CODE_SIGN_CERT_PAPPASJ }}".Trim()
+          [IO.File]::WriteAllBytes("cert.pfx", [Convert]::FromBase64String($b64))
+          Write-Host "Certificate decoded successfully"
 
       - name: Sign Installer file
         uses: Encryption-Consulting-LLC/CodeSigning-Action@v1
