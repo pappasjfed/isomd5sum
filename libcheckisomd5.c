@@ -54,7 +54,7 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
     if (info == NULL)
         return ISOMD5SUM_CHECK_NOT_FOUND;
 
-    const int64_t total_size = info->isosize - info->skipsectors * SECTOR_SIZE;
+    int64_t total_size = info->isosize - info->skipsectors * SECTOR_SIZE;
     const int64_t fragment_size = total_size / (info->fragmentcount + 1);
     if (cb)
         cb(cbdata, 0LL, (long long) total_size);
@@ -83,8 +83,22 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
         const size_t nbyte = MIN((size_t)(total_size - offset), buffer_size);
 
         ssize_t nread = read(isofd, buffer, nbyte);
-        
-        if (nread <= 0L) {
+
+        if (nread == 0) {
+        #ifdef _WIN32
+            /*
+            * Windows cdrom.sys stops reads at the ISO9660 volume boundary for
+            * ISOHybrid media even though the embedded isosize includes the
+            * hybrid trailer. Treat EOF as the end of readable media.
+            */
+            total_size = offset;
+            break;
+        #else
+            break;
+        #endif
+        }
+
+        if (nread < 0) {
             break;
         }
         
@@ -140,7 +154,7 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
     aligned_free(buffer);
 
     if (cb)
-        cb(cbdata, (long long) info->isosize, (long long) total_size);
+        cb(cbdata, (long long) total_size, (long long) total_size);
 
     char hashsum[HASH_SIZE + 1];
     if (info->use_sha256) {
