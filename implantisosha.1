@@ -1,0 +1,18 @@
+.TH "IMPLANTISOSHA" "1"
+.SH "NAME"
+implantisosha \(em implant a SHA-256 checksum in an ISO9660 image
+.SH "SYNOPSIS"
+.PP
+\fBimplantisosha\fR [\fB\-\-force\fP]  [\fB\-\-supported-iso\fP]  [isofilename]
+.SH "DESCRIPTION"
+.PP
+This manual page documents briefly the \fBimplantisosha\fR command. \fBimplantisosha\fR is a program that embeds a SHA-256 checksum in an unused section of and ISO9660 (.iso) image.  This checksum can later be compared to the .iso, or a block device, using the corresponding \fBcheckisosha\fR or \fBcheckisomd5\fR command (both can read SHA-256 checksums).
+.SH "OPTIONS"
+.IP "\fB\-\-force\fP" 10
+Force an existing checksum to be overwritten.
+.IP "\fB\-\-supported-iso\fP" 10
+Indicate that the image will be written to a "supported" media, such as pressed CD.  On Red Hat-based Anaconda installers, this bypasses the prompt to check the CD.
+.SH "SEE ALSO"
+.PP
+checkisosha (1), checkisomd5 (1), implantisomd5 (1).
+.\" created by instant / docbook-to-man, Thu 07 Feb 2008, 12:11

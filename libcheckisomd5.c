@@ -35,6 +35,7 @@
 #endif
 
 #include "md5.h"
+#include "sha256.h"
 #include "libcheckisomd5.h"
 #include "utilities.h"
 
@@ -60,11 +61,18 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
     if (cb)
         cb(cbdata, 0LL, (long long) total_size);
 
-    /* Rewind, compute md5sum. */
+    /* Rewind, compute hash. */
     lseek(isofd, 0LL, SEEK_SET);
 
-    MD5_CTX hashctx;
-    MD5_Init(&hashctx);
+    /* Use SHA-256 or MD5 based on what was found in the ISO */
+    MD5_CTX md5ctx;
+    SHA256_CTX sha256ctx;
+    
+    if (info->use_sha256) {
+        SHA256_Init(&sha256ctx);
+    } else {
+        MD5_Init(&md5ctx);
+    }
 
     const size_t buffer_size = NUM_SYSTEM_SECTORS * SECTOR_SIZE;
     unsigned char *buffer;
@@ -117,8 +125,16 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
 
             /* If we're onto the next fragment, calculate the previous sum and check. */
             if (current_fragment != previous_fragment) {
-                if (!validate_fragment(&hashctx, current_fragment, fragmentsize,
-                                       info->fragmentsums, NULL)) {
+                bool fragment_valid;
+                if (info->use_sha256) {
+                    fragment_valid = validate_fragment_sha256(&sha256ctx, current_fragment, fragmentsize,
+                                                             info->fragmentsums, NULL);
+                } else {
+                    fragment_valid = validate_fragment(&md5ctx, current_fragment, fragmentsize,
+                                                      info->fragmentsums, NULL);
+                }
+                
+                if (!fragment_valid) {
                     /* Exit immediately if current fragment sum is incorrect */
                     free(info);
                     aligned_free(buffer);
@@ -144,13 +160,32 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
         cb(cbdata, (long long)total_size, (long long)total_size);
 
     char hashsum[HASH_SIZE + 1];
-    md5sum(hashsum, &hashctx);
+    if (info->use_sha256) {
+        sha256sum(hashsum, &sha256ctx);
+    } else {
+        md5sum(hashsum, &md5ctx);
+    }
 
     int failed = strcmp(info->hashsum, hashsum);
 
     free(info);
 
     return failed ? ISOMD5SUM_CHECK_FAILED : ISOMD5SUM_CHECK_PASSED;
+}
+
+int isSupportedFile(const char *file) {
+    int isofd = open(file, O_RDONLY | O_BINARY);
+    if (isofd < 0) {
+        return ISOMD5SUM_FILE_NOT_FOUND;
+    }
+    struct volume_info *const info = parsepvd(isofd);
+    close(isofd);
+    if (info == NULL) {
+        return ISOMD5SUM_CHECK_NOT_FOUND;
+    }
+    int supported = (int) info->supported;
+    free(info);
+    return supported;
 }
 
 int mediaCheckFile(const char *file, checkCallback cb, void *cbdata) {

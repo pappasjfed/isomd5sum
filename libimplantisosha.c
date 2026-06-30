@@ -36,7 +36,8 @@
 #endif
 
 #include "md5.h"
-#include "libimplantisomd5.h"
+#include "sha256.h"
+#include "libimplantisosha.h"
 #include "utilities.h"
 
 static int writeAppData(unsigned char *const appdata, const char *const valstr, size_t *loc, char **errstr) {
@@ -52,18 +53,18 @@ static int writeAppData(unsigned char *const appdata, const char *const valstr, 
     return 0;
 }
 
-int implantISOFile(const char *iso, int supported, int forceit, int quiet, char **errstr) {
+int implantISOSHAFile(const char *iso, int supported, int forceit, int quiet, char **errstr) {
     int isofd = open(iso, O_RDWR | O_BINARY);
     if (isofd < 0) {
         *errstr = "Error - Unable to open file %s";
         return -1;
     }
-    int rc = implantISOFD(isofd, supported, forceit, quiet, errstr);
+    int rc = implantISOSHAFD(isofd, supported, forceit, quiet, errstr);
     close(isofd);
     return rc;
 }
 
-int implantISOFD(int isofd, int supported, int forceit, int quiet, char **errstr) {
+int implantISOSHAFD(int isofd, int supported, int forceit, int quiet, char **errstr) {
 
     int64_t pvd_offset;
     const int64_t isosize = primary_volume_size(isofd, &pvd_offset);
@@ -97,11 +98,11 @@ int implantISOFD(int isofd, int supported, int forceit, int quiet, char **errstr
         }
     }
 
-    /* Rewind, compute md5sum. */
+    /* Rewind, compute SHA-256 hash. */
     lseek(isofd, 0LL, SEEK_SET);
 
-    MD5_CTX hashctx;
-    MD5_Init(&hashctx);
+    SHA256_CTX hashctx;
+    SHA256_Init(&hashctx);
     char fragmentsums[FRAGMENT_SUM_SIZE + 1];
     *fragmentsums = '\0';
 
@@ -120,12 +121,12 @@ int implantISOFD(int isofd, int supported, int forceit, int quiet, char **errstr
         if (nread <= 0L)
             break;
 
-        MD5_Update(&hashctx, buffer, (size_t) nread);
+        SHA256_Update(&hashctx, buffer, (size_t) nread);
         const size_t current_fragment = offset / fragment_size;
         const size_t fragmentsize = FRAGMENT_SUM_SIZE / FRAGMENT_COUNT;
         /* If we're onto the next fragment, calculate the previous sum and check. */
         if (current_fragment != previous_fragment) {
-            validate_fragment(&hashctx, current_fragment, fragmentsize, NULL, fragmentsums);
+            validate_fragment_sha256(&hashctx, current_fragment, fragmentsize, NULL, fragmentsums);
             previous_fragment = current_fragment;
         }
 
@@ -133,19 +134,19 @@ int implantISOFD(int isofd, int supported, int forceit, int quiet, char **errstr
     }
     aligned_free(buffer);
 
-    char hashsum[MD5_HASH_SIZE + 1];
-    md5sum(hashsum, &hashctx);
+    char hashsum[HASH_SIZE + 1];
+    sha256sum(hashsum, &hashctx);
     if (!quiet) {
-        printf("Inserting md5sum into iso image...\n");
-        printf("md5 = %s\n", hashsum);
-        printf("Inserting fragment md5sums into iso image...\n");
-        printf("fragmd5 = %s\n", fragmentsums);
+        printf("Inserting SHA-256 checksum into iso image...\n");
+        printf("sha256 = %s\n", hashsum);
+        printf("Inserting fragment checksums into iso image...\n");
+        printf("fragsha256 = %s\n", fragmentsums);
         printf("frags = %lu\n", FRAGMENT_COUNT);
     }
     memset(appdata, ' ', APPDATA_SIZE);
 
     size_t loc = 0;
-    if (writeAppData(appdata, "ISO MD5SUM = ", &loc, errstr))
+    if (writeAppData(appdata, "ISO SHA256SUM = ", &loc, errstr))
         return -1;
     if (writeAppData(appdata, hashsum, &loc, errstr))
         return -1;
@@ -185,7 +186,7 @@ int implantISOFD(int isofd, int supported, int forceit, int quiet, char **errstr
         return -1;
 
     if (writeAppData(
-            appdata, "THIS IS NOT THE SAME AS RUNNING MD5SUM ON THIS ISO!!", &loc, errstr))
+            appdata, "THIS IS NOT THE SAME AS RUNNING SHA256SUM ON THIS ISO!!", &loc, errstr))
         return -1;
 
     if (lseek(isofd, pvd_offset + APPDATA_OFFSET, SEEK_SET) < 0) {

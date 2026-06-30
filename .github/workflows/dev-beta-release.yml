@@ -1,0 +1,215 @@
+name: Dev Branch Beta Release
+
+on:
+  pull_request:  # Triggers on all branches
+  push:  # Triggers on all branches
+  workflow_dispatch:
+
+# Set minimal default permissions
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    container:
+      image: registry.fedoraproject.org/fedora:39
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install dependencies
+        run: |
+          dnf install -y gcc popt-devel python3 python3-devel make xorriso
+      - name: Build
+        run: |
+          make
+      - name: Run tests
+        run: |
+          make test
+      - name: Prepare artifacts
+        run: |
+          mkdir -p artifacts
+          cp checkisomd5 artifacts/
+          cp implantisomd5 artifacts/
+          cp COPYING artifacts/LICENSE.txt
+          cp README artifacts/README.txt
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: isomd5sum-linux-dev
+          path: artifacts/
+          retention-days: 30
+
+  build-windows:
+    name: Build Windows Executables
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      
+      - name: Set up CMake
+        uses: lukka/get-cmake@latest
+      
+      - name: Configure CMake
+        run: |
+          mkdir build
+          cd build
+          cmake -A x64 ..
+      
+      - name: Build
+        run: |
+          cd build
+          cmake --build . --config Release
+      
+      - name: Install NSIS
+        run: |
+          choco install nsis -y
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          $nsisPath = Get-Command makensis -ErrorAction SilentlyContinue
+          if ($nsisPath) {
+            Write-Host "NSIS installed successfully at: $($nsisPath.Source)"
+          } else {
+            Write-Host "Warning: NSIS may not be in PATH, but should be available"
+          }
+      
+      - name: Build Installer
+        run: |
+          cd build
+          cpack -C Release -G NSIS
+          Write-Host "Generated installer files:"
+          Get-ChildItem -Filter "*.exe" | ForEach-Object { Write-Host $_.Name }
+      
+      - name: Prepare artifacts
+        run: |
+          mkdir artifacts
+          copy build\Release\checkisomd5.exe artifacts\
+          copy build\Release\implantisomd5.exe artifacts\
+          copy COPYING artifacts\LICENSE.txt
+          copy README artifacts\README.txt
+          
+          # Copy installer if it exists
+          $installer = Get-ChildItem -Path build -Filter "isomd5sum-*-win64.exe" | Select-Object -First 1
+          if ($installer) {
+            copy $installer.FullName artifacts\
+            Write-Host "Installer copied: $($installer.Name)"
+          } else {
+            Write-Host "No installer found in build directory"
+          }
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: isomd5sum-windows-dev
+          path: artifacts/
+          retention-days: 30
+
+  publish-beta-release:
+    name: Publish Beta Release
+    runs-on: ubuntu-latest
+    needs: [build-and-test, build-windows]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'  # Only run on push to develop branch
+    permissions:
+      contents: write  # Needed to create releases
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: isomd5sum-linux-dev
+          path: ./release-linux
+      
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: isomd5sum-windows-dev
+          path: ./release-windows
+      
+      - name: Generate version info
+        id: version
+        run: |
+          # Generate beta version with timestamp
+          TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          VERSION="beta-${TIMESTAMP}-${SHORT_SHA}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Generated version: ${VERSION}"
+      
+      - name: Create release archives
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Create Linux x64 archives (both tarball and zip)
+          cd release-linux
+          tar -czf ../isomd5sum-${VERSION}-linux-x64.tar.gz .
+          zip -r ../isomd5sum-${VERSION}-linux-x64.zip .
+          cd ..
+          
+          # Create Windows x64 zip (executables only, installer is separate)
+          cd release-windows
+          # Copy installer separately if it exists
+          if ls isomd5sum-*-win64.exe 1> /dev/null 2>&1; then
+            cp isomd5sum-*-win64.exe ../isomd5sum-${VERSION}-win64.exe
+            rm -f isomd5sum-*-win64.exe
+          fi
+          zip -r ../isomd5sum-${VERSION}-windows-x64.zip .
+          cd ..
+          
+          # Calculate checksums
+          sha256sum isomd5sum-${VERSION}-linux-x64.tar.gz > checksums.txt
+          sha256sum isomd5sum-${VERSION}-linux-x64.zip >> checksums.txt
+          sha256sum isomd5sum-${VERSION}-windows-x64.zip >> checksums.txt
+          if [ -f "isomd5sum-${VERSION}-win64.exe" ]; then
+            sha256sum isomd5sum-${VERSION}-win64.exe >> checksums.txt
+          fi
+      
+      - name: Create Beta Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: "Beta Release ${{ steps.version.outputs.version }}"
+          files: |
+            isomd5sum-*.tar.gz
+            isomd5sum-*.zip
+            isomd5sum-*-win64.exe
+            checksums.txt
+          body: |
+            ## ⚠️ Beta Release (Dev Branch)
+            
+            This is an **automated beta release** from the `dev` branch.
+            
+            **⚠️ Warning**: This is a development build and may be unstable. Use at your own risk!
+            
+            ### Build Information
+            - **Branch**: dev
+            - **Commit**: ${{ github.sha }}
+            - **Build Date**: ${{ steps.version.outputs.version }}
+            
+            ### Downloads
+            - **Linux x64 Build**: 
+              - `isomd5sum-*-linux-x64.tar.gz` - Tarball format (Built on Fedora 39)
+              - `isomd5sum-*-linux-x64.zip` - Zip format (Built on Fedora 39)
+            - **Windows x64 Build**:
+              - `isomd5sum-*-win64.exe` - Windows installer (user or system install with PATH configuration)
+              - `isomd5sum-*-windows-x64.zip` - Portable executables built with Visual Studio 2022
+            
+            ### What's included
+            - `checkisomd5` / `checkisomd5.exe` - Check MD5 checksums embedded in ISO images
+            - `implantisomd5` / `implantisomd5.exe` - Implant MD5 checksums into ISO images
+            - Documentation files
+            
+            ### Checksums
+            See `checksums.txt` for SHA256 checksums of the release files.
+            
+            ---
+            
+            For stable releases, see releases tagged with version numbers (e.g., v1.0.0).
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
