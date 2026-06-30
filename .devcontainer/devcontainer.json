@@ -1,0 +1,64 @@
+{
+    "name": "isomd5sum",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+
+    // ──────────────────────────────────────────────────────────────
+    // VS Code extensions installed inside the container
+    // ──────────────────────────────────────────────────────────────
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                // C / C++ tooling
+                "ms-vscode.cpptools",
+                "ms-vscode.cpptools-extension-pack",
+                "ms-vscode.cmake-tools",
+                "ms-vscode.makefile-tools",
+                "twxs.cmake",
+                // Clang-d (richer completion / go-to-def than cpptools alone)
+                "llvm-vs-code-extensions.vscode-clangd",
+                // Python (for test scripts and pyisomd5sum binding)
+                "ms-python.python",
+                "ms-python.pylint",
+                // Shell scripts
+                "timonwong.shellcheck",
+                "foxundermoon.shell-format",
+                // Git / GitHub
+                "GitHub.copilot",
+                "GitHub.copilot-chat",
+                // Diagnostics
+                "ms-vscode.hexeditor"
+            ],
+            "settings": {
+                // Use clangd as the primary C intellisense provider
+                "C_Cpp.intelliSenseEngine": "disabled",
+                "[c]": {
+                    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+                },
+                // clang-format is configured by .clang-format in the repo root
+                "clangd.arguments": [
+                    "--header-insertion=never",
+                    "--clang-tidy"
+                ],
+                // CMake
+                "cmake.generator": "Ninja",
+                "cmake.buildDirectory": "${workspaceFolder}/build",
+                // Python
+                "python.defaultInterpreterPath": "/usr/bin/python3",
+                // Terminal
+                "terminal.integrated.defaultProfile.linux": "bash"
+            }
+        }
+    },
+
+    // ──────────────────────────────────────────────────────────────
+    // After the container is created: do a quick Makefile build
+    // to confirm all build-time dependencies resolve correctly.
+    // ──────────────────────────────────────────────────────────────
+    "postCreateCommand": "make && echo '✓ isomd5sum build successful'",
+
+    // Run as the non-root vscode user created by the base image
+    "remoteUser": "vscode"
+}
