@@ -53,8 +53,10 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
     if (info == NULL)
         return ISOMD5SUM_CHECK_NOT_FOUND;
 
-    const int64_t total_size = info->isosize - info->skipsectors * SECTOR_SIZE;
+    /* Mutable so Windows optical media can adjust for early EOF. */
+    int64_t total_size = info->isosize - info->skipsectors * SECTOR_SIZE;
     const int64_t fragment_size = total_size / (info->fragmentcount + 1);
+
     if (cb)
         cb(cbdata, 0LL, (long long) total_size);
 
@@ -66,20 +68,34 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
 
     const size_t buffer_size = NUM_SYSTEM_SECTORS * SECTOR_SIZE;
     unsigned char *buffer;
-    buffer = aligned_alloc((size_t) getpagesize(), buffer_size * sizeof(*buffer));
+    buffer = aligned_alloc((size_t)getpagesize(), buffer_size * sizeof(*buffer));
 
     size_t previous_fragment = 0UL;
     int64_t offset = 0LL;
-    
+
     while (offset < total_size) {
         const size_t nbyte = MIN((size_t)(total_size - offset), buffer_size);
 
         ssize_t nread = read(isofd, buffer, nbyte);
-        
-        if (nread <= 0L) {
+
+        if (nread == 0) {
+#ifdef _WIN32
+            /*
+             * Windows cdrom.sys stops reads at the ISO9660 volume boundary for
+             * ISOHybrid media even though the embedded isosize includes the
+             * hybrid trailer. Treat EOF as the end of readable media.
+             */
+            total_size = offset;
+            break;
+#else
+            break;
+#endif
+        }
+
+        if (nread < 0) {
             break;
         }
-        
+
         /**
          * Originally was added in 2005 because the kernel was returning the
          * size from where it started up to the end of the block it pre-fetched
@@ -89,13 +105,16 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
             nread = nbyte;
             lseek(isofd, offset + nread, SEEK_SET);
         }
+
         /* Make sure appdata which contains the md5sum is cleared. */
         clear_appdata(buffer, nread, info->offset + APPDATA_OFFSET, offset);
 
-        MD5_Update(&hashctx, buffer, (size_t) nread);
+        MD5_Update(&hashctx, buffer, (size_t)nread);
+
         if (info->fragmentcount) {
             const size_t current_fragment = offset / fragment_size;
             const size_t fragmentsize = FRAGMENT_SUM_SIZE / info->fragmentcount;
+
             /* If we're onto the next fragment, calculate the previous sum and check. */
             if (current_fragment != previous_fragment) {
                 if (!validate_fragment(&hashctx, current_fragment, fragmentsize,
@@ -108,24 +127,29 @@ static enum isomd5sum_status checkmd5sum(int isofd, checkCallback cb, void *cbda
                 previous_fragment = current_fragment;
             }
         }
+
         offset += nread;
+
         if (cb)
-            if (cb(cbdata, (long long) offset, (long long) total_size)) {
+            if (cb(cbdata, (long long)offset, (long long)total_size)) {
                 free(info);
                 aligned_free(buffer);
                 return ISOMD5SUM_CHECK_ABORTED;
             }
     }
+
     aligned_free(buffer);
 
     if (cb)
-        cb(cbdata, (long long) info->isosize, (long long) total_size);
+        cb(cbdata, (long long)total_size, (long long)total_size);
 
     char hashsum[HASH_SIZE + 1];
     md5sum(hashsum, &hashctx);
 
     int failed = strcmp(info->hashsum, hashsum);
+
     free(info);
+
     return failed ? ISOMD5SUM_CHECK_FAILED : ISOMD5SUM_CHECK_PASSED;
 }
 
@@ -134,8 +158,11 @@ int mediaCheckFile(const char *file, checkCallback cb, void *cbdata) {
     if (isofd < 0) {
         return ISOMD5SUM_FILE_NOT_FOUND;
     }
+
     int rc = checkmd5sum(isofd, cb, cbdata);
+
     close(isofd);
+
     return rc;
 }
 
@@ -148,19 +175,25 @@ int printMD5SUM(const char *file) {
     if (isofd < 0) {
         return ISOMD5SUM_FILE_NOT_FOUND;
     }
+
     struct volume_info *const info = parsepvd(isofd);
+
     close(isofd);
+
     if (info == NULL) {
         return ISOMD5SUM_CHECK_NOT_FOUND;
     }
 
     printf("%s:   %s\n", file, info->hashsum);
+
     if (strlen(info->fragmentsums) > 0 && info->fragmentcount > 0) {
         printf("Fragment sums: %s\n", info->fragmentsums);
         printf("Fragment count: %zu\n", info->fragmentcount);
         printf("Supported ISO: %s\n", info->supported ? "yes" : "no");
     }
+
     fflush(stdout);
     free(info);
+
     return 0;
 }
